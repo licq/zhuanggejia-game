@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>装个家</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; }
+:root {
+  --primary: #E07B39;
+  --primary-dark: #C4612A;
+  --gold: #FFD700;
+  --success: #52C41A;
+  --bg: #F5F0EB;
+  --card: #FFFFFF;
+  --text: #333333;
+  --text-light: #888888;
+  --shadow: 0 4px 20px rgba(0,0,0,0.08);
+  --radius: 16px;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+  background: var(--bg);
+  overflow: hidden;
+  height: 100dvh;
+  width: 100vw;
+}
+#app {
+  width: 100%; height: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ===== 通用 ===== */
+.page { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.35s; }
+.page.active { opacity: 1; pointer-events: all; }
+.panel { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%); width: 100%; max-width: 500px; background: var(--card); border-radius: 24px 24px 0 0; padding: 20px 16px 40px; z-index: 300; transition: transform 0.4s cubic-bezier(0.4,0,0.2,1); max-height: 85vh; overflow-y: auto; }
+.panel.open { transform: translateX(-50%) translateY(0); }
+.panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 299; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.panel-overlay.open { opacity: 1; pointer-events: all; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 8px; background: var(--card); flex-shrink: 0; z-index: 10; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.topbar-left { display: flex; align-items: center; gap: 8px; }
+.topbar-title { font-size: 17px; font-weight: 700; color: var(--text); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.resource-item { display: flex; align-items: center; gap: 4px; background: #F7F4F0; border-radius: 20px; padding: 4px 10px; font-size: 13px; font-weight: 600; }
+.btn-icon { width: 34px; height: 34px; background: #F7F4F0; border: none; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; transition: transform 0.15s; }
+.btn-icon:active { transform: scale(0.9); }
+
+.bottom-nav { display: flex; background: var(--card); border-top: 1px solid rgba(0,0,0,0.06); padding: 6px 0 8px; flex-shrink: 0; z-index: 50; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; cursor: pointer; border: none; background: none; transition: transform 0.15s; position: relative; }
+.nav-item:active { transform: scale(0.92); }
+.nav-icon { font-size: 24px; }
+.nav-label { font-size: 10px; color: var(--text-light); font-weight: 500; }
+.nav-item.active .nav-label { color: var(--primary); font-weight: 600; }
+.nav-item.active::before { content: ''; position: absolute; top: -6px; width: 24px; height: 3px; background: var(--primary); border-radius: 0 0 2px 2px; }
+
+/* ===== 首页 ===== */
+.home-page { background: var(--bg); }
+.home-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0 0 90px; }
+.home-scroll::-webkit-scrollbar { width: 0; }
+
+.home-banner { margin: 12px 16px; background: linear-gradient(135deg, #E07B39, #F4A460); border-radius: 20px; padding: 20px; color: #fff; position: relative; overflow: hidden; box-shadow: 0 6px 24px rgba(224,123,57,0.3); }
+.banner-bg { position: absolute; right: -10px; bottom: -10px; font-size: 80px; opacity: 0.15; }
+.banner-label { font-size: 11px; background: rgba(255,255,255,0.25); display: inline-block; padding: 2px 10px; border-radius: 10px; margin-bottom: 6px; }
+.banner-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.banner-sub { font-size: 12px; opacity: 0.85; }
+.banner-btn { margin-top: 12px; background: rgba(255,255,255,0.95); color: var(--primary); border: none; border-radius: 20px; padding: 8px 20px; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+.section-title { font-size: 15px; font-weight: 700; color: var(--text); padding: 16px 16px 10px; display: flex; align-items: center; justify-content: space-between; }
+.section-title .more { font-size: 12px; color: var(--text-light); font-weight: 400; }
+
+.rooms-scroll { display: flex; gap: 12px; padding: 0 16px 8px; overflow-x: auto; }
+.rooms-scroll::-webkit-scrollbar { display: none; }
+
+.room-card { flex-shrink: 0; width: 160px; background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); cursor: pointer; transition: transform 0.2s; }
+.room-card:active { transform: scale(0.97); }
+
+/* 房间预览 — 2.5D真实房间 */
+.room-preview-3d { height: 120px; position: relative; overflow: hidden; }
+.room-3d-wall { position: absolute; inset: 0; z-index: 1; }
+.room-3d-floor { position: absolute; bottom: 0; left: 0; right: 0; height: 35%; z-index: 2; }
+.room-3d-window { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 3; font-size: 36px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+.room-3d-furniture { position: absolute; bottom: 28%; left: 0; right: 0; display: flex; justify-content: center; align-items: flex-end; gap: 2px; z-index: 4; flex-wrap: wrap; }
+.room-3d-furniture-item { font-size: 20px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25)); }
+.room-card-footer { padding: 10px 12px; }
+.room-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.room-meta { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.room-style-badge { display: inline-block; font-size: 10px; background: #F0EBE5; color: var(--primary); border-radius: 8px; padding: 1px 6px; margin-top: 3px; }
+.room-progress-bar { height: 4px; background: #F0EBE5; border-radius: 2px; margin-top: 6px; overflow: hidden; }
+.room-progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), #F4A460); border-radius: 2px; transition: width 0.6s; }
+
+.quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 16px; }
+.quick-item { background: var(--card); border-radius: 14px; padding: 14px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; box-shadow: var(--shadow); transition: transform 0.2s; border: none; width: 100%; position: relative; }
+.quick-item:active { transform: scale(0.95); }
+.quick-icon { font-size: 28px; }
+.quick-text { font-size: 12px; color: var(--text); font-weight: 500; }
+.quick-badge { position: absolute; top: -4px; right: -4px; background: #FF4757; color: #fff; font-size: 10px; padding: 1px 5px; border-radius: 10px; font-weight: 700; }
+
+.task-list { padding: 0 16px; }
+.task-item { background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.task-icon-wrap { width: 44px; height: 44px; background: #FFF5EE; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.task-info { flex: 1; }
+.task-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.task-desc { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.task-reward { display: flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 600; color: var(--primary); }
+.task-btn { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; border: none; border-radius: 18px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; transition: transform 0.15s; display: flex; align-items: center; gap: 4px; }
+.task-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.task-btn.done { background: #F0EBE5; color: var(--success); }
+
+.share-btn { width: 100%; background: linear-gradient(135deg, #07C160, #06AD56); color: #fff; border: none; border-radius: 24px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; }
+
+/* ===== 房间详情页 ===== */
+.room-detail-page { background: var(--bg); }
+.room-detail-header { padding: 20px 16px 60px; }
+.room-detail-header-inner { margin: 0 -16px; padding: 20px 16px 60px; }
+.room-detail-back { background: rgba(255,255,255,0.2); border: none; color: #fff; font-size: 18px; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+.room-detail-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; color: #fff; }
+.room-detail-meta { font-size: 12px; opacity: 0.85; color: rgba(255,255,255,0.9); }
+.room-detail-body { flex: 1; overflow-y: auto; margin-top: -40px; padding: 0 16px 100px; }
+
+/* 2.5D真实房间 */
+.room-3d-container { border-radius: 20px; overflow: hidden; position: relative; margin-bottom: 16px; box-shadow: var(--shadow); }
+.room-3d-container.edit-mode { border: 2px solid var(--primary); }
+
+/* 3D房间：墙面+窗户+地板 */
+.room-scene { width: 100%; height: 240px; position: relative; overflow: hidden; }
+.room-wall { position: absolute; inset: 0; z-index: 1; }
+.room-wall-top { height: 65%; }
+.room-wall-divider { height: 5%; z-index: 3; position: relative; }
+.room-floor { height: 30%; position: absolute; bottom: 0; left: 0; right: 0; z-index: 2; }
+
+/* 墙线装饰 */
+.room-molding { position: absolute; left: 0; right: 0; height: 6px; z-index: 4; }
+
+/* 窗户 */
+.room-window { position: absolute; top: 8%; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; flex-direction: column; align-items: center; }
+.room-window-frame { display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.15); border: 3px solid; border-radius: 4px; padding: 4px; }
+.room-window-pane { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.room-window-glass { width: 28px; height: 32px; border-radius: 2px; }
+.room-curtain { position: absolute; top: -4px; width: 100%; display: flex; justify-content: space-between; padding: 0 2px; }
+.room-curtain-side { font-size: 18px; }
+
+/* 墙上装饰 */
+.room-wall-deco { position: absolute; z-index: 5; font-size: 22px; }
+
+/* 地板 */
+.room-floor-tiles { position: absolute; inset: 0; }
+
+/* 家具摆放区域 */
+.room-furniture-area { position: absolute; bottom: 8%; left: 5%; right: 5%; height: 50%; z-index: 10; }
+.room-empty-hint { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(0,0,0,0.2); gap: 4px; z-index: 9; }
+.room-empty-hint-icon { font-size: 32px; opacity: 0.4; }
+
+/* 可拖动家具 */
+.room-draggable-furniture {
+  position: absolute; cursor: grab; z-index: 11;
+  display: flex; flex-direction: column; align-items: center;
+  transition: filter 0.15s;
+  user-select: none;
+}
+.room-draggable-furniture:active { cursor: grabbing; z-index: 20; }
+.room-draggable-furniture .furniture-emoji { font-size: 36px; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.25)); }
+.room-draggable-furniture .furniture-label { font-size: 9px; color: rgba(0,0,0,0.5); margin-top: 1px; font-weight: 600; background: rgba(255,255,255,0.7); padding: 1px 5px; border-radius: 6px; }
+.room-draggable-furniture.placing { animation: furnitureBob 2s ease-in-out infinite; }
+@keyframes furnitureBob { 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-3px); } }
+
+/* 装修风格选择 */
+.style-section { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+.style-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.style-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.style-card { border-radius: 10px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; background: #F9F7F4; }
+.style-card:active { transform: scale(0.96); }
+.style-card.selected { border-color: var(--primary); background: #FFF5EE; }
+.style-card-icon { font-size: 22px; }
+.style-card-name { font-size: 9px; font-weight: 600; color: var(--text); text-align: center; }
+.style-card-check { font-size: 9px; color: var(--primary); }
+
+/* 已摆放家具列表 */
+.room-placed-list { background: var(--card); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 12px; }
+.room-placed-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+.room-placed-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.room-chip { display: flex; align-items: center; gap: 4px; background: #F9F7F4; border-radius: 20px; padding: 6px 12px; font-size: 13px; color: var(--text); }
+.room-chip-remove { background: none; border: none; font-size: 12px; cursor: pointer; margin-left: 2px; opacity: 0.5; }
+.room-empty { text-align: center; padding: 20px; color: var(--text-light); font-size: 13px; }
+
+/* 按钮 */
+.room-cta { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; border: none; border-radius: 24px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.edit-btn { background: linear-gradient(135deg, #4A90D9, #3A7BC8); color: #fff; border: none; border-radius: 24px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+/* ===== 组装页 ===== */
+.assemble-page { background: linear-gradient(180deg, #1A1A2E 0%, #16213E 100%); }
+.assemble-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(255,255,255,0.05); flex-shrink: 0; }
+.assemble-back { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+.assemble-info { text-align: center; flex: 1; }
+.assemble-name { font-size: 15px; font-weight: 700; color: #fff; }
+.assemble-step { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+.assemble-timer { background: rgba(255,255,255,0.1); border-radius: 20px; padding: 6px 14px; font-size: 15px; font-weight: 700; color: #fff; min-width: 60px; text-align: center; }
+.timer-danger { color: #FF6B6B; animation: timerFlash 0.5s infinite alternate; }
+@keyframes timerFlash { from { opacity: 1; } to { opacity: 0.5; } }
+
+.assemble-body { flex: 1; display: flex; flex-direction: column; padding: 12px; gap: 12px; overflow: hidden; }
+
+.blueprint-section { background: rgba(255,255,255,0.04); border-radius: 20px; padding: 14px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.06); }
+.blueprint-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.blueprint-label { font-size: 11px; color: rgba(255,255,255,0.4); }
+.blueprint-hint { font-size: 11px; color: #FFD700; cursor: pointer; }
+.blueprint-canvas { background: #0D1B3E; border-radius: 14px; height: 180px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.blueprint-furniture { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; opacity: 0.2; pointer-events: none; }
+.blueprint-furniture-icon { font-size: 72px; }
+.blueprint-furniture-label { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+.parts-section { flex: 1; background: rgba(255,255,255,0.04); border-radius: 20px; padding: 14px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.06); }
+.parts-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-shrink: 0; }
+.parts-label { font-size: 11px; color: rgba(255,255,255,0.4); }
+.parts-progress { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 600; }
+.parts-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; }
+.parts-scroll::-webkit-scrollbar { width: 0; }
+.parts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding-bottom: 10px; }
+
+.part-piece { border-radius: 12px; cursor: grab; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s; overflow: hidden; }
+.part-piece::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.25), transparent 50%); border-radius: 12px; }
+.part-piece:active { cursor: grabbing; transform: scale(1.06); }
+.part-piece.placed { opacity: 0.2; pointer-events: none; transform: scale(0.9); }
+.part-piece.hint-glow { animation: glowHint 1s infinite alternate; }
+@keyframes glowHint { from { box-shadow: 0 0 10px 3px rgba(255,215,0,0.5); } to { box-shadow: 0 0 22px 7px rgba(255,215,0,1); } }
+.part-shape { width: 70%; height: 55%; border-radius: 4px; position: relative; margin-bottom: 4px; }
+.part-shape.board { background: linear-gradient(180deg, #C4A574, #A0784A); border-radius: 3px; }
+.part-shape.leg { width: 20%; height: 70%; background: linear-gradient(180deg, #B8956A, #8B6914); border-radius: 3px; margin-bottom: 0; margin-top: 4px; }
+.part-shape.cushion { background: linear-gradient(180deg, #E8D5B7, #D4B896); border-radius: 6px; }
+.part-shape.metal { background: linear-gradient(180deg, #B8B8B8, #888); border-radius: 2px; }
+.part-shape.glass { background: linear-gradient(135deg, rgba(173,216,230,0.6), rgba(135,206,250,0.4)); border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; }
+.part-shape.fabric { background: linear-gradient(135deg, #9B8B75, #7D6E5A); border-radius: 6px; }
+.part-shape.handle { width: 40%; height: 25%; background: linear-gradient(180deg, #D4AF37, #B8941F); border-radius: 10px; margin-bottom: 0; }
+.part-name { font-size: 10px; color: rgba(255,255,255,0.8); font-weight: 600; z-index: 1; text-align: center; padding: 0 4px; }
+.part-num-badge { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.3); color: #fff; font-size: 9px; font-weight: 700; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2; }
+
+.part-drag { position: fixed; pointer-events: none; z-index: 9999; opacity: 0.95; transform: scale(1.1) rotate(3deg); filter: drop-shadow(0 12px 24px rgba(0,0,0,0.4)); }
+
+.slot-cell { border: 2px dashed rgba(255,255,255,0.2); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.25s; position: relative; background: rgba(255,255,255,0.03); }
+.slot-cell.filled { border-color: transparent; background: transparent; }
+.slot-cell.highlight { border-color: #FFD700 !important; background: rgba(255,215,0,0.15) !important; animation: slotPulse 0.8s infinite alternate; }
+@keyframes slotPulse { from { box-shadow: 0 0 8px 2px rgba(255,215,0,0.4); } to { box-shadow: 0 0 20px 6px rgba(255,215,0,0.8); } }
+.slot-label { font-size: 9px; color: rgba(255,255,255,0.25); font-weight: 600; margin-top: 2px; }
+.slot-emoji { font-size: 16px; opacity: 0.3; }
+.ring-anim { position: absolute; border: 3px solid var(--gold); border-radius: 50%; animation: ringPop 0.5s ease-out forwards; pointer-events: none; }
+@keyframes ringPop { 0% { transform: scale(0.4); opacity: 1; } 100% { transform: scale(2.2); opacity: 0; } }
+
+.assemble-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+.assemble-overlay.show { opacity: 1; pointer-events: all; }
+.overlay-icon { font-size: 72px; margin-bottom: 16px; animation: iconBounce 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes iconBounce { from { transform: scale(0); } to { transform: scale(1); } }
+.overlay-title { font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+.overlay-sub { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 8px; }
+.overlay-reward { display: flex; align-items: center; gap: 6px; background: rgba(255,215,0,0.15); border: 1px solid rgba(255,215,0,0.3); border-radius: 20px; padding: 6px 16px; font-size: 16px; font-weight: 700; color: var(--gold); margin-bottom: 24px; }
+.overlay-btns { display: flex; gap: 12px; }
+.overlay-btn { border: none; border-radius: 24px; padding: 12px 28px; font-size: 14px; font-weight: 700; cursor: pointer; transition: transform 0.15s; }
+.overlay-btn:active { transform: scale(0.95); }
+.overlay-btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; }
+.overlay-btn-secondary { background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+.overlay-btn-ad { background: linear-gradient(135deg, #FF6B6B, #EE5A5A); color: #fff; }
+
+/* ===== 我的页面 ===== */
+.my-page { background: var(--bg); }
+.my-header { background: linear-gradient(135deg, var(--primary), #F4A460); padding: 24px 16px 40px; color: #fff; }
+.my-user { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.my-avatar { width: 56px; height: 56px; background: rgba(255,255,255,0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 2px solid rgba(255,255,255,0.4); }
+.my-name { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+.my-id { font-size: 12px; opacity: 0.75; }
+.my-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: rgba(255,255,255,0.15); border-radius: 14px; padding: 14px 8px; }
+.my-stat { text-align: center; }
+.my-stat-num { font-size: 20px; font-weight: 800; }
+.my-stat-label { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+.my-body { flex: 1; overflow-y: auto; margin-top: -24px; padding: 0 16px 100px; }
+.my-card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+.my-card-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+.rank-list { display: flex; flex-direction: column; gap: 10px; }
+.rank-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #F5F0EB; }
+.rank-item:last-child { border-bottom: none; }
+.rank-num { width: 22px; height: 22px; background: #F0EBE5; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--text-light); flex-shrink: 0; }
+.rank-num.top1 { background: #FFF3E0; color: #E65100; }
+.rank-num.top2 { background: #FFF8E1; color: #F57F17; }
+.rank-num.top3 { background: #FFFDE7; color: #F9A825; }
+.rank-icon { font-size: 22px; }
+.rank-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--text); }
+.rank-score { font-size: 13px; font-weight: 700; color: var(--primary); }
+.achievement-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.achievement-card { background: #F9F7F4; border-radius: 12px; padding: 14px; display: flex; gap: 10px; align-items: center; }
+.achievement-card.done { background: #F6FFED; }
+.achievement-card-icon { font-size: 28px; flex-shrink: 0; }
+.achievement-card-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.achievement-card-desc { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.achievement-card-status { font-size: 11px; color: var(--success); font-weight: 600; }
+
+/* ===== 面板 ===== */
+.signin-content { padding: 0 4px; }
+.signin-title { font-size: 16px; font-weight: 800; color: var(--text); text-align: center; margin-bottom: 4px; }
+.signin-sub { font-size: 12px; color: var(--text-light); text-align: center; margin-bottom: 16px; }
+.signin-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 16px; }
+.signin-day { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; background: #F7F4F0; border-radius: 10px; font-size: 11px; color: var(--text-light); }
+.signin-day.today { background: #FFF5EE; border: 1px solid var(--primary); color: var(--primary); }
+.signin-day.done { background: #F6FFED; border: 1px solid var(--success); color: var(--success); }
+.signin-day-icon { font-size: 18px; }
+.signin-day-num { font-size: 10px; font-weight: 600; }
+.signin-claim-btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; border: none; border-radius: 24px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
+
+.tasks-content { padding: 0 4px; }
+.tasks-title { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 14px; }
+.task-list-panel { display: flex; flex-direction: column; gap: 10px; }
+
+.store-content { padding: 0 4px; }
+.store-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.store-tab { flex: 1; padding: 8px; background: #F7F4F0; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; color: var(--text-light); cursor: pointer; transition: all 0.2s; }
+.store-tab.active { background: var(--primary); color: #fff; }
+.furniture-showcase { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 400px; overflow-y: auto; }
+.furniture-card { background: #F9F7F4; border-radius: 14px; padding: 14px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; transition: transform 0.15s; border: 2px solid transparent; position: relative; }
+.furniture-card:active { transform: scale(0.96); }
+.furniture-card.owned { border-color: var(--success); background: #F6FFED; }
+.furniture-card.locked { opacity: 0.45; }
+.furniture-card-icon { font-size: 36px; }
+.furniture-card-name { font-size: 12px; font-weight: 600; color: var(--text); text-align: center; }
+.furniture-card-count { font-size: 11px; color: var(--text-light); }
+.furniture-card-count span { color: var(--primary); font-weight: 700; }
+
+/* ===== Toast ===== */
+.toast-container { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; align-items: center; }
+.toast { background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 24px; font-size: 14px; font-weight: 500; white-space: nowrap; animation: toastIn 0.3s ease, toastOut 0.3s ease 1.2s forwards; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-10px) scale(0.9); } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(-10px) scale(0.9); } }
+.toast.success { background: rgba(82,196,26,0.9); }
+.toast.gold { background: rgba(255,215,0,0.9); color: #333; }
+
+/* 广告 */
+.ad-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.ad-modal.show { opacity: 1; pointer-events: all; }
+.ad-content { text-align: center; color: #fff; }
+.ad-icon { font-size: 64px; margin-bottom: 12px; }
+.ad-label { font-size: 14px; opacity: 0.7; margin-bottom: 20px; }
+.ad-progress-wrap { width: 240px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; margin: 0 auto; }
+.ad-progress { height: 100%; background: var(--primary); width: 0; transition: width 0.1s linear; }
+.ad-skip { margin-top: 16px; font-size: 12px; color: rgba(255,255,255,0.4); }
+
+/* 奖励弹窗 */
+.reward-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 400; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.reward-modal.show { opacity: 1; pointer-events: all; }
+.reward-content { background: var(--card); border-radius: 24px; padding: 32px 24px 24px; text-align: center; width: 300px; transform: scale(0.8); transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+.reward-modal.show .reward-content { transform: scale(1); }
+.reward-icon { font-size: 72px; margin-bottom: 12px; }
+.reward-title { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+.reward-sub { font-size: 13px; color: var(--text-light); margin-bottom: 16px; }
+.reward-item { display: inline-flex; align-items: center; gap: 6px; background: #FFF8E6; border: 1px solid #FFE4B5; border-radius: 20px; padding: 8px 20px; font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 20px; }
+.reward-btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; border: none; border-radius: 24px; padding: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+
+/* 引导 */
+.guide-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+.guide-overlay.show { opacity: 1; pointer-events: all; }
+.guide-hand { font-size: 64px; margin-bottom: 16px; animation: handWave 1s infinite alternate; }
+@keyframes handWave { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+.guide-title { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 8px; text-align: center; }
+.guide-desc { font-size: 14px; color: rgba(255,255,255,0.65); text-align: center; line-height: 1.7; margin-bottom: 8px; }
+.guide-step { font-size: 12px; color: var(--primary); margin-bottom: 20px; }
+.guide-btn { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; border: none; border-radius: 24px; padding: 12px 40px; font-size: 15px; font-weight: 700; cursor: pointer; }
+
+/* 粒子 */
+.particle { position: fixed; pointer-events: none; font-size: 16px; z-index: 9998; animation: particleFly 1s ease-out forwards; }
+@keyframes particleFly { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-80px) scale(0.5); opacity: 0; } }
+
+/* 选择家具弹窗 */
+.pick-furniture-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 350; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.pick-furniture-modal.show { opacity: 1; pointer-events: all; }
+.pick-content { background: var(--card); border-radius: 24px; padding: 24px 16px; text-align: center; width: 320px; max-height: 70vh; overflow-y: auto; }
+.pick-title { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+.pick-sub { font-size: 12px; color: var(--text-light); margin-bottom: 16px; }
+.pick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pick-item { background: #F9F7F4; border-radius: 12px; padding: 14px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; }
+.pick-item:active { transform: scale(0.96); }
+.pick-item.selected { border-color: var(--primary); background: #FFF5EE; }
+.pick-item-icon { font-size: 32px; }
+.pick-item-name { font-size: 11px; font-weight: 600; color: var(--text); }
+.pick-btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; border: none; border-radius: 24px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 12px; }
+.pick-cancel { background: #F0EBE5; color: var(--text); margin-top: 8px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- 顶部栏 -->
+  <div class="topbar" id="topbar">
+    <div class="topbar-left"><span style="font-size:20px">🏠</span><span class="topbar-title">装个家</span></div>
+    <div class="topbar-right">
+      <div class="resource-item"><span>🪙</span><span id="topbarCoins">0</span></div>
+      <div class="resource-item"><span>💎</span><span id="topbarGems">0</span></div>
+      <button class="btn-icon" onclick="shareGame()">🔗</button>
+    </div>
+  </div>
+
+  <!-- ===== 首页 ===== -->
+  <div class="page home-page active" id="homePage">
+    <div class="home-scroll">
+      <div class="home-banner" onclick="showSigninPanel()">
+        <div class="banner-bg">🏠</div>
+        <div class="banner-label">🎁 每日奖励</div>
+        <div class="banner-title">欢迎回来！</div>
+        <div class="banner-sub" id="bannerSub">点击领取今日签到奖励</div>
+        <button class="banner-btn" id="bannerBtn">立即领取 →</button>
+      </div>
+      <div class="section-title">🏠 我的家<span class="more" id="totalProgress">装修 0%</span></div>
+      <div class="rooms-scroll" id="roomsScroll"></div>
+      <div class="section-title">🎮 功能入口</div>
+      <div class="quick-grid">
+        <button class="quick-item" onclick="startAssemble()" style="position:relative"><span class="quick-icon">🔨</span><span class="quick-text">组装家具</span></button>
+        <button class="quick-item" onclick="showSigninPanel()"><span class="quick-icon">📅</span><span class="quick-text">每日签到</span></button>
+        <button class="quick-item" onclick="showTasksPanel()"><span class="quick-icon">📋</span><span class="quick-text">每日任务</span><span class="quick-badge" id="taskBadge" style="display:none">0</span></button>
+        <button class="quick-item" onclick="showStorePanel()"><span class="quick-icon">📦</span><span class="quick-text">家具仓库</span></button>
+      </div>
+      <div class="section-title">🎯 每日任务<span class="more" onclick="showTasksPanel()">全部 →</span></div>
+      <div class="task-list" id="taskListHome"></div>
+      <div class="section-title">🏆 装修排行榜</div>
+      <div style="padding: 0 16px;"><div class="my-card" id="rankCard"></div></div>
+      <div style="padding: 0 16px 20px;"><button class="share-btn" onclick="shareGame()"><span>📤</span> 分享到微信，邀请好友一起来装修</button></div>
+    </div>
+  </div>
+
+  <!-- ===== 组装页 ===== -->
+  <div class="page assemble-page" id="assemblePage">
+    <div class="assemble-header">
+      <button class="assemble-back" onclick="exitAssemble()">✕</button>
+      <div class="assemble-info">
+        <div class="assemble-name" id="assembleFurnitureName">组装中...</div>
+        <div class="assemble-step" id="assembleStep">0 / 0 零件</div>
+      </div>
+      <div class="assemble-timer" id="timerDisplay">⏱ 00:00</div>
+    </div>
+    <div class="assemble-body">
+      <div class="blueprint-section">
+        <div class="blueprint-header">
+          <span class="blueprint-label">📐 目标图纸 — 照着把零件拖到正确位置</span>
+          <span class="blueprint-hint" onclick="useHint()">💡 提示</span>
+        </div>
+        <div class="blueprint-canvas" id="blueprintCanvas"></div>
+      </div>
+      <div class="parts-section">
+        <div class="parts-header">
+          <span class="parts-label">🧰 零件 — 拖拽安装</span>
+          <span class="parts-progress" id="partsProgress">0 / 0</span>
+        </div>
+        <div class="parts-scroll"><div class="parts-grid" id="partsGrid"></div></div>
+      </div>
+    </div>
+    <div class="assemble-overlay" id="completeOverlay">
+      <div class="overlay-icon">🎉</div>
+      <div class="overlay-title">组装完成！</div>
+      <div class="overlay-sub" id="completeSub">太棒了！</div>
+      <div class="overlay-reward" id="completeReward">🪙 +50</div>
+      <div class="overlay-btns">
+        <button class="overlay-btn overlay-btn-secondary" onclick="showAdForDouble()">📺 双倍奖励</button>
+        <button class="overlay-btn overlay-btn-primary" onclick="collectFurniture()">收下家具</button>
+      </div>
+    </div>
+    <div class="assemble-overlay" id="failOverlay">
+      <div class="overlay-icon">⏰</div>
+      <div class="overlay-title">时间到！</div>
+      <div class="overlay-sub">差一点就完成了</div>
+      <div class="overlay-btns">
+        <button class="overlay-btn overlay-btn-secondary" onclick="exitAssemble()">退出</button>
+        <button class="overlay-btn overlay-btn-ad" onclick="showAdForRetry()">📺 看广告复活</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 房间详情页 ===== -->
+  <div class="page room-detail-page" id="roomDetailPage">
+    <div class="room-detail-header">
+      <div class="room-detail-header-inner" id="roomDetailHeaderInner">
+        <button class="room-detail-back" onclick="goHome()">←</button>
+        <div class="room-detail-title" id="roomDetailName">客厅</div>
+        <div class="room-detail-meta" id="roomDetailMeta">已摆放 0 / 8 件家具</div>
+      </div>
+    </div>
+    <div class="room-detail-body">
+      <!-- 2.5D房间 -->
+      <div class="room-3d-container" id="room3dContainer">
+        <div class="room-scene" id="roomScene">
+          <div class="room-wall" id="roomWall"></div>
+          <div class="room-wall-divider" id="roomDivider"></div>
+          <div class="room-floor" id="roomFloor"></div>
+          <div class="room-window" id="roomWindow"></div>
+          <div class="room-wall-deco" id="roomWallDeco"></div>
+          <div class="room-furniture-area" id="roomFurnitureArea"></div>
+          <div class="room-empty-hint" id="roomEmptyHint">
+            <span class="room-empty-hint-icon">🏚️</span>
+            <span style="font-size:12px">空空如也</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 装修风格 -->
+      <div class="style-section">
+        <div class="style-title">🎨 装修风格 — 点击切换</div>
+        <div class="style-grid" id="styleGrid"></div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <button class="room-cta" id="placeFurnitureBtn" onclick="showPickFurniture()">+ 摆放家具到房间</button>
+      <button class="edit-btn" id="editModeBtn" onclick="toggleEditMode()">✏️ 编辑模式：拖动调整位置</button>
+
+      <!-- 已摆放列表 -->
+      <div class="room-placed-list">
+        <div class="room-placed-title">已摆放的家具</div>
+        <div class="room-placed-chips" id="roomPlacedChips"></div>
+        <div class="room-empty" id="roomPlacedEmpty">还没有家具</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 我的页面 ===== -->
+  <div class="page my-page" id="myPage">
+    <div class="my-header">
+      <div class="my-user">
+        <div class="my-avatar">😊</div>
+        <div><div class="my-name" id="myPlayerName">装修达人</div><div class="my-id">ID: <span id="myPlayerId">888888</span></div></div>
+      </div>
+      <div class="my-stats-row">
+        <div class="my-stat"><div class="my-stat-num" id="myTotalFurniture">0</div><div class="my-stat-label">收集家具</div></div>
+        <div class="my-stat"><div class="my-stat-num" id="myTotalPlaced">0</div><div class="my-stat-label">已摆放</div></div>
+        <div class="my-stat"><div class="my-stat-num" id="myTotalCoins">0</div><div class="my-stat-label">累计金币</div></div>
+      </div>
+    </div>
+    <div class="my-body">
+      <div class="my-card">
+        <div class="my-card-title">🏆 成就</div>
+        <div class="achievement-grid" id="achievementGrid"></div>
+      </div>
+      <div class="my-card">
+        <div class="my-card-title">📊 本周排行</div>
+        <div class="rank-list" id="myRankList"></div>
+      </div>
+      <button class="share-btn" onclick="shareGame()"><span>📤</span> 分享我的家，邀请好友</button>
+    </div>
+  </div>
+
+  <!-- ===== 底部导航 ===== -->
+  <div class="bottom-nav" id="bottomNav">
+    <button class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span><span class="nav-label">首页</span></button>
+    <button class="nav-item" onclick="showStorePanel()"><span class="nav-icon">📦</span><span class="nav-label">仓库</span></button>
+    <button class="nav-item" onclick="startAssemble()"><span class="nav-icon">🔨</span><span class="nav-label">组装</span></button>
+    <button class="nav-item" onclick="showMy()"><span class="nav-icon">👤</span><span class="nav-label">我的</span></button>
+  </div>
+
+  <!-- ===== 面板 ===== -->
+  <div class="panel-overlay" id="panelOverlay" onclick="closeAllPanels()"></div>
+  <div class="panel" id="signinPanel"><div class="signin-content"><div class="signin-title">📅 每日签到</div><div class="signin-sub" id="signinSub">连续签到 0 天</div><div class="signin-days" id="signinDays"></div><button class="signin-claim-btn" id="signinBtn" onclick="doSignin()">立即签到</button></div></div>
+  <div class="panel" id="tasksPanel"><div class="tasks-content"><div class="tasks-title">🎯 每日任务</div><div class="task-list-panel" id="taskList"></div></div></div>
+  <div class="panel" id="storePanel"><div class="store-content"><div class="store-tabs"><button class="store-tab active" onclick="switchStoreTab('owned')">已收集</button><button class="store-tab" onclick="switchStoreTab('all')">全部家具</button></div><div class="furniture-showcase" id="furnitureShowcase"></div></div></div>
+
+  <!-- 摆放家具选择弹窗 -->
+  <div class="pick-furniture-modal" id="pickFurnitureModal">
+    <div class="pick-content">
+      <div class="pick-title">🪑 选择要摆放的家具</div>
+      <div class="pick-sub">从仓库中选择一件家具放入房间</div>
+      <div class="pick-grid" id="pickGrid"></div>
+      <button class="pick-btn" id="pickConfirmBtn" onclick="confirmPlaceFurniture()" disabled>请选择一件家具</button>
+      <button class="pick-btn pick-cancel" onclick="closePickFurniture()">取消</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- 广告 -->
+  <div class="ad-modal" id="adModal"><div class="ad-content"><div class="ad-icon">📺</div><div class="ad-label" id="adLabel">广告播放中...</div><div class="ad-progress-wrap"><div class="ad-progress" id="adProgress"></div></div><div class="ad-skip" id="adSkip">剩余 5 秒</div></div></div>
+
+  <!-- 奖励 -->
+  <div class="reward-modal" id="rewardModal"><div class="reward-content"><div class="reward-icon" id="rewardIcon">🎁</div><div class="reward-title" id="rewardTitle">签到成功！</div><div class="reward-sub" id="rewardSub">明天继续签到</div><div class="reward-item" id="rewardItem">🪙 +100</div><button class="reward-btn" onclick="closeReward()">收下</button></div></div>
+
+  <!-- 引导 -->
+  <div class="guide-overlay" id="guideOverlay"><div class="guide-hand" id="guideHand">👆</div><div class="guide-title" id="guideTitle">欢迎</div><div class="guide-desc" id="guideDesc">...</div><div class="guide-step" id="guideStep">第 1/4 步</div><button class="guide-btn" id="guideBtn" onclick="nextGuide()">知道了</button></div>
+
+</div>
+
+<script>
+// ===== 装修风格 =====
+// 每个风格：墙面(纯色/渐变/图案)、地板(wall floor color)、窗框颜色、窗玻璃颜色、踢脚线、墙上装饰
+const ROOM_STYLES = [
+  {
+    id:'modern', name:'现代简约', icon:'🏢',
+    wallBg:'linear-gradient(180deg,#F8F6F4 0%,#F0EDE8 100%)',
+    wallPattern:'none',
+    floorBg:'#D4C8B8',
+    floorPattern:'repeating-linear-gradient(90deg,#D4C8B8,#D4C8B8 38px,#C8BCA8 38px,#C8BCA8 40px)',
+    moldingColor:'#FFFFFF',
+    windowFrame:'#E8E4E0',
+    windowGlass:'linear-gradient(135deg,rgba(200,220,240,0.5),rgba(180,200,230,0.3))',
+    curtainColor:'rgba(220,215,210,0.7)',
+    decoEmoji:'🖼️',
+    decoColor:'#D4AF37',
+    wallAccent:'none',
+  },
+  {
+    id:'nordic', name:'北欧风', icon:'🌿',
+    wallBg:'linear-gradient(180deg,#F5F0E8 0%,#EDE8DC 100%)',
+    wallPattern:'none',
+    floorBg:'#DEC9A8',
+    floorPattern:'repeating-linear-gradient(90deg,#DEC9A8,#DEC9A8 48px,#C8B490 48px,#C8B490 50px)',
+    moldingColor:'#FFFFFF',
+    windowFrame:'#E8E0D0',
+    windowGlass:'linear-gradient(135deg,rgba(160,200,220,0.4),rgba(140,180,200,0.3))',
+    curtainColor:'rgba(200,210,200,0.6)',
+    decoEmoji:'🌿',
+    decoColor:'#7DA67B',
+    wallAccent:'none',
+  },
+  {
+    id:'chinese', name:'中式风', icon:'🏯',
+    wallBg:'linear-gradient(180deg,#8B4513 0%,#6B3410 100%)',
+    wallPattern:'none',
+    floorBg:'#5C3A1E',
+    floorPattern:'repeating-linear-gradient(90deg,#5C3A1E,#5C3A1E 58px,#3D2612 58px,#3D2612 60px)',
+    moldingColor:'#3D2612',
+    windowFrame:'#8B4513',
+    windowGlass:'linear-gradient(135deg,rgba(200,180,140,0.4),rgba(180,160,120,0.3))',
+    curtainColor:'rgba(180,50,50,0.8)',
+    decoEmoji:'🀄',
+    decoColor:'#D4AF37',
+    wallAccent:'none',
+  },
+  {
+    id:'industrial', name:'工业风', icon:'🏭',
+    wallBg:'repeating-linear-gradient(0deg,#8B4513 0px,#8B4513 30px,#6B3410 30px,#6B3410 60px)',
+    wallPattern:'none',
+    floorBg:'#4A4A4A',
+    floorPattern:'repeating-linear-gradient(90deg,#4A4A4A,#4A4A4A 58px,#3A3A3A 58px,#3A3A3A 60px)',
+    moldingColor:'#3A3A3A',
+    windowFrame:'#5A5A5A',
+    windowGlass:'linear-gradient(135deg,rgba(100,120,140,0.4),rgba(80,100,120,0.3))',
+    curtainColor:'rgba(80,80,80,0.5)',
+    decoEmoji:'💡',
+    decoColor:'#F4D03F',
+    wallAccent:'none',
+  },
+  {
+    id:'japanese', name:'日式风', icon:'🏯',
+    wallBg:'linear-gradient(180deg,#FDF6E3 0%,#F5ECD7 100%)',
+    wallPattern:'none',
+    floorBg:'#DEC9A8',
+    floorPattern:'repeating-linear-gradient(90deg,#DEC9A8,#DEC9A8 58px,#C8B490 58px,#C8B490 60px)',
+    moldingColor:'#8B6914',
+    windowFrame:'#C4A574',
+    windowGlass:'linear-gradient(135deg,rgba(220,230,220,0.4),rgba(200,210,200,0.3))',
+    curtainColor:'rgba(200,210,200,0.7)',
+    decoEmoji:'🎋',
+    decoColor:'#7D8E6A',
+    wallAccent:'none',
+  },
+];
+
+// ===== 房间 =====
+// room emoji in scene: window emoji, floor emoji, deco emoji
+const ROOM_SCENE_CONFIG = {
+  living: {
+    window:'🪟', windowScale:1.3,
+    wallDecoPos:{ right:'12%', top:'20%' },
+    floorDeco:'🟫', // 地毯
+    roomBg:'#E8E0D8',
+  },
+  bedroom: {
+    window:'🪟', windowScale:1.1,
+    wallDecoPos:{ left:'12%', top:'18%' },
+    floorDeco:'🛏️',
+    roomBg:'#DDD8D0',
+  },
+  kitchen: {
+    window:'🍳', windowScale:0.9,
+    wallDecoPos:{ right:'10%', top:'22%' },
+    floorDeco:'🔲',
+    roomBg:'#D8D0C8',
+  },
+  study: {
+    window:'📚', windowScale:0.9,
+    wallDecoPos:{ right:'15%', top:'15%' },
+    floorDeco:'📖',
+    roomBg:'#D0C8C0',
+  },
+  bathroom: {
+    window:'🚿', windowScale:0.8,
+    wallDecoPos:{ right:'10%', top:'20%' },
+    floorDeco:'🔷',
+    roomBg:'#D0CCC8',
+  },
+};
+
+// ===== 家具定义 =====
+// 每个家具：图标、零件列表（真实零件）
+const FURNITURE_DATA = [
+  { id:'chair', name:'椅子', icon:'🪑', room:'living', parts:4, time:30, reward:30, diff:1,
+    parts_list:[
+      {id:'p1',name:'椅座板',shape:'board',color:'#C4A574'},
+      {id:'p2',name:'椅背板',shape:'board',color:'#C4A574'},
+      {id:'p3',name:'前腿',shape:'leg',color:'#A0784A'},
+      {id:'p4',name:'后腿',shape:'leg',color:'#8B6914'},
+    ]
+  },
+  { id:'table', name:'茶几', icon:'🪵', room:'living', parts:4, time:40, reward:40, diff:1,
+    parts_list:[
+      {id:'p1',name:'桌面板',shape:'board',color:'#C4A574'},
+      {id:'p2',name:'玻璃层',shape:'glass',color:'rgba(173,216,230,0.5)'},
+      {id:'p3',name:'支撑腿',shape:'leg',color:'#8B6914'},
+      {id:'p4',name:'横档',shape:'board',color:'#A0784A'},
+    ]
+  },
+  { id:'sofa', name:'沙发', icon:'🛋️', room:'living', parts:5, time:50, reward:60, diff:2,
+    parts_list:[
+      {id:'p1',name:'底座',shape:'board',color:'#8B6914'},
+      {id:'p2',name:'坐垫',shape:'cushion',color:'#E8D5B7'},
+      {id:'p3',name:'靠背',shape:'cushion',color:'#D4C4A8'},
+      {id:'p4',name:'扶手',shape:'cushion',color:'#C4B496'},
+      {id:'p5',name:'腿',shape:'leg',color:'#7A5C3A'},
+    ]
+  },
+  { id:'bed', name:'床', icon:'🛏️', room:'bedroom', parts:5, time:60, reward:70, diff:2,
+    parts_list:[
+      {id:'p1',name:'床架',shape:'board',color:'#A0784A'},
+      {id:'p2',name:'床垫',shape:'cushion',color:'#F0EBE3'},
+      {id:'p3',name:'床头板',shape:'board',color:'#8B6914'},
+      {id:'p4',name:'床腿',shape:'leg',color:'#7A5C3A'},
+      {id:'p5',name:'被子',shape:'fabric',color:'#9BB8D4'},
+    ]
+  },
+  { id:'desk', name:'书桌', icon:'📔', room:'study', parts:5, time:45, reward:50, diff:2,
+    parts_list:[
+      {id:'p1',name:'桌面',shape:'board',color:'#BC8F8F'},
+      {id:'p2',name:'抽屉',shape:'board',color:'#A07878'},
+      {id:'p3',name:'桌腿',shape:'leg',color:'#8B6B6B'},
+      {id:'p4',name:'把手',shape:'handle',color:'#D4AF37'},
+      {id:'p5',name:'书架',shape:'board',color:'#A08080'},
+    ]
+  },
+  { id:'bookshelf', name:'书架', icon:'📚', room:'study', parts:6, time:80, reward:90, diff:3,
+    parts_list:[
+      {id:'p1',name:'侧板',shape:'board',color:'#8B7355'},
+      {id:'p2',name:'隔板',shape:'board',color:'#A08060'},
+      {id:'p3',name:'背板',shape:'board',color:'#6B5344'},
+      {id:'p4',name:'图书',shape:'board',color:'#C45C5C'},
+      {id:'p5',name:'图书',shape:'board',color:'#5C8CC4'},
+      {id:'p6',name:'图书',shape:'board',color:'#5CC47A'},
+    ]
+  },
+  { id:'tv', name:'电视柜', icon:'📺', room:'living', parts:4, time:35, reward:35, diff:1,
+    parts_list:[
+      {id:'p1',name:'柜体',shape:'board',color:'#2C3E50'},
+      {id:'p2',name:'面板',shape:'board',color:'#34495E'},
+      {id:'p3',name:'腿',shape:'leg',color:'#1A252F'},
+      {id:'p4',name:'把手',shape:'handle',color:'#C0C0C0'},
+    ]
+  },
+  { id:'lamp', name:'台灯', icon:'💡', room:'bedroom', parts:4, time:25, reward:25, diff:1,
+    parts_list:[
+      {id:'p1',name:'灯罩',shape:'fabric',color:'#F4D03F'},
+      {id:'p2',name:'灯杆',shape:'metal',color:'#C0C0C0'},
+      {id:'p3',name:'底座',shape:'metal',color:'#A0A0A0'},
+      {id:'p4',name:'灯泡',shape:'glass',color:'rgba(255,255,200,0.6)'},
+    ]
+  },
+  { id:'wardrobe', name:'衣柜', icon:'🗄️', room:'bedroom', parts:5, time:70, reward:80, diff:2,
+    parts_list:[
+      {id:'p1',name:'柜体',shape:'board',color:'#DEB887'},
+      {id:'p2',name:'左门',shape:'board',color:'#C8A878'},
+      {id:'p3',name:'右门',shape:'board',color:'#C8A878'},
+      {id:'p4',name:'把手',shape:'handle',color:'#D4AF37'},
+      {id:'p5',name:'隔板',shape:'board',color:'#DEB887'},
+    ]
+  },
+  { id:'fridge', name:'冰箱', icon:'🧊', room:'kitchen', parts:4, time:45, reward:45, diff:2,
+    parts_list:[
+      {id:'p1',name:'外壳',shape:'board',color:'#E8E8E8'},
+      {id:'p2',name:'冷藏层',shape:'board',color:'#D0D0D0'},
+      {id:'p3',name:'冷冻层',shape:'board',color:'#C0C0C0'},
+      {id:'p4',name:'把手',shape:'handle',color:'#A8A8A8'},
+    ]
+  },
+  { id:'stove', name:'灶台', icon:'🍳', room:'kitchen', parts:4, time:40, reward:40, diff:1,
+    parts_list:[
+      {id:'p1',name:'台面',shape:'board',color:'#2C2C2C'},
+      {id:'p2',name:'灶眼',shape:'metal',color:'#444444'},
+      {id:'p3',name:'旋钮',shape:'metal',color:'#666666'},
+      {id:'p4',name:'炉架',shape:'metal',color:'#555555'},
+    ]
+  },
+  { id:'plant', name:'盆栽', icon:'🌿', room:'living', parts:4, time:20, reward:20, diff:1,
+    parts_list:[
+      {id:'p1',name:'花盆',shape:'board',color:'#C4703C'},
+      {id:'p2',name:'泥土',shape:'board',color:'#5C4033'},
+      {id:'p3',name:'叶片',shape:'fabric',color:'#52C41A'},
+      {id:'p4',name:'花朵',shape:'fabric',color:'#FF6B6B'},
+    ]
+  },
+  { id:'wc', name:'马桶', icon:'🚽', room:'bathroom', parts:4, time:35, reward:35, diff:1,
+    parts_list:[
+      {id:'p1',name:'马桶座',shape:'board',color:'#FFFFFF'},
+      {id:'p2',name:'水箱',shape:'board',color:'#F5F5F5'},
+      {id:'p3',name:'排水管',shape:'metal',color:'#C0C0C0'},
+      {id:'p4',name:'盖子',shape:'board',color:'#FFFFFF'},
+    ]
+  },
+  { id:'washbasin', name:'洗手台', icon:'🚰', room:'bathroom', parts:4, time:45, reward:45, diff:2,
+    parts_list:[
+      {id:'p1',name:'台面',shape:'board',color:'#FFFFFF'},
+      {id:'p2',name:'洗手盆',shape:'glass',color:'rgba(200,230,240,0.5)'},
+      {id:'p3',name:'柜体',shape:'board',color:'#E8E8E8'},
+      {id:'p4',name:'水龙头',shape:'metal',color:'#D4AF37'},
+    ]
+  },
+  { id:'rug', name:'地毯', icon:'🟫', room:'living', parts:3, time:25, reward:25, diff:1,
+    parts_list:[
+      {id:'p1',name:'毯面',shape:'fabric',color:'#CD853F'},
+      {id:'p2',name:'绒毛层',shape:'fabric',color:'#DEB887'},
+      {id:'p3',name:'防滑底',shape:'board',color:'#8B7355'},
+    ]
+  },
+  { id:'clock', name:'挂钟', icon:'🕐', room:'living', parts:3, time:20, reward:20, diff:1,
+    parts_list:[
+      {id:'p1',name:'钟面',shape:'board',color:'#FFFFFF'},
+      {id:'p2',name:'表壳',shape:'board',color:'#F39C12'},
+      {id:'p3',name:'指针',shape:'metal',color:'#333333'},
+    ]
+  },
+  { id:'cabinet', name:'餐边柜', icon:'🍽️', room:'kitchen', parts:4, time:45, reward:50, diff:2,
+    parts_list:[
+      {id:'p1',name:'柜体',shape:'board',color:'#8B6914'},
+      {id:'p2',name:'玻璃门',shape:'glass',color:'rgba(200,220,240,0.4)'},
+      {id:'p3',name:'储物门',shape:'board',color:'#7A5C10'},
+      {id:'p4',name:'把手',shape:'handle',color:'#D4AF37'},
+    ]
+  },
+  { id:'nightstand', name:'床头柜', icon:'🗄️', room:'bedroom', parts:3, time:35, reward:35, diff:1,
+    parts_list:[
+      {id:'p1',name:'柜体',shape:'board',color:'#DEB887'},
+      {id:'p2',name:'抽屉',shape:'board',color:'#C8A870'},
+      {id:'p3',name:'腿',shape:'leg',color:'#A07850'},
+    ]
+  },
+  { id:'shower', name:'淋浴房', icon:'🚿', room:'bathroom', parts:4, time:55, reward:55, diff:2,
+    parts_list:[
+      {id:'p1',name:'底盆',shape:'board',color:'#E8E8E8'},
+      {id:'p2',name:'玻璃门',shape:'glass',color:'rgba(200,220,240,0.3)'},
+      {id:'p3',name:'花洒头',shape:'metal',color:'#C0C0C0'},
+      {id:'p4',name:'水管',shape:'metal',color:'#A0A0A0'},
+    ]
+  },
+  { id:'dresser', name:'梳妆台', icon:'💄', room:'bedroom', parts:5, time:55, reward:65, diff:2,
+    parts_list:[
+      {id:'p1',name:'台面',shape:'board',color:'#DB7093'},
+      {id:'p2',name:'抽屉',shape:'board',color:'#C8608A'},
+      {id:'p3',name:'镜子',shape:'glass',color:'rgba(200,220,240,0.5)'},
+      {id:'p4',name:'腿',shape:'leg',color:'#B06080'},
+      {id:'p5',name:'把手',shape:'handle',color:'#D4AF37'},
+    ]
+  },
+];
+
+const ROOMS = [
+  { id:'living', name:'客厅', icon:'🛋️', capacity:8 },
+  { id:'bedroom', name:'卧室', icon:'🛏️', capacity:6 },
+  { id:'kitchen', name:'厨房', icon:'🍳', capacity:5 },
+  { id:'study', name:'书房', icon:'📚', capacity:5 },
+  { id:'bathroom', name:'卫生间', icon:'🚿', capacity:4 },
+];
+
+const SIGNIN_REWARDS = [30,40,50,60,80,100,150];
+const TASKS = [
+  {id:'assemble1',name:'组装一件家具',icon:'🔨',desc:'完成一次家具组装',reward:20,type:'once'},
+  {id:'assemble3',name:'组装三件家具',icon:'🔩',desc:'今日完成3次组装',reward:60,type:'daily',target:3},
+  {id:'signin',name:'每日签到',icon:'📅',desc:'签到领取奖励',reward:30,type:'daily'},
+  {id:'place3',name:'摆放家具',icon:'🏠',desc:'在房间里摆放3件家具',reward:50,type:'once',target:3},
+  {id:'watchad',name:'观看广告',icon:'📺',desc:'观看一次广告',reward:10,type:'daily'},
+  {id:'login',name:'每日登录',icon:'🏠',desc:'打开游戏',reward:10,type:'daily'},
+];
+const ACHIEVEMENTS = [
+  {id:'first',name:'初来乍到',icon:'🌱',desc:'收集第一件家具',cond:s=>s.ownedFurniture.length>=1},
+  {id:'five',name:'小有成就',icon:'🌿',desc:'收集5件家具',cond:s=>s.ownedFurniture.length>=5},
+  {id:'ten',name:'家具达人',icon:'🌳',desc:'收集10件家具',cond:s=>s.ownedFurniture.length>=10},
+  {id:'place3',name:'初具规模',icon:'🏠',desc:'摆放3件家具到房间',cond:s=>countPlaced(s)>=3},
+  {id:'place10',name:'温馨小窝',icon:'🏡',desc:'摆放10件家具到房间',cond:s=>countPlaced(s)>=10},
+  {id:'rich',name:'存款上万',icon:'💰',desc:'累计获得10000金币',cond:s=>s.totalCoins>=10000},
+];
+const GUIDE_STEPS = [
+  {hand:'👆',title:'欢迎来到「装个家」',desc:'用碎片时间，组装家具\n把毛坯房变成温馨的家',btn:'了解一下'},
+  {hand:'🔨',title:'组装家具很简单',desc:'从零件库拖拽到正确位置\n零件是真实的家具部件',btn:'我学会了'},
+  {hand:'📺',title:'看广告能加速',desc:'想要双倍金币？想要复活？\n看个广告就能解决',btn:'太棒了'},
+  {hand:'🏆',title:'签到和任务有奖励',desc:'每日签到、完成任务\n获得金币和更多家具',btn:'开始装修！'},
+];
+
+// ===== 游戏状态 =====
+let S = {
+  coins:100, gems:0, totalCoins:0,
+  ownedFurniture:[],
+  placedFurniture:{}, // { roomId: [{fid, x, y}] }  x,y为百分比位置
+  roomStyles:{}, // { roomId: styleId }
+  unlockedFurniture:['chair','table','lamp','tv','stove','plant','rug','clock','bed','desk','wc','fridge','bookshelf','wardrobe','cabinet','nightstand','sofa','washbasin','shower','dresser'],
+  stats:{assembled:0,placed:0,adsWatched:0},
+  signinStreak:0,lastSignin:null,totalSignins:0,
+  guideStep:0,
+  taskProgress:{},
+  dailyTasks:{},
+  dailyTasksDate:null,
+};
+
+function countPlaced(s){return Object.values(s.placedFurniture).flat().length;}
+function save(){localStorage.setItem('zhuanggejia_v4',JSON.stringify(S));}
+function load(){
+  const d=localStorage.getItem('zhuanggejia_v4');
+  if(d){try{S={...S,...JSON.parse(d)};}catch(e){}}
+  const today=new Date().toDateString();
+  if(S.dailyTasksDate!==today){S.dailyTasks={};S.dailyTasksDate=today;save();}
+}
+
+// ===== Toast =====
+function toast(msg,type='default'){
+  const c=document.getElementById('toastContainer');
+  const t=document.createElement('div');
+  t.className='toast'+(type!=='default'?' '+type:'');
+  t.textContent=msg;c.appendChild(t);
+  setTimeout(()=>t.remove(),1600);
+}
+function particle(x,y,emoji){
+  for(let i=0;i<3;i++){
+    const p=document.createElement('div');
+    p.className='particle';p.textContent=emoji;
+    p.style.left=(x+Math.random()*30-15)+'px';
+    p.style.top=(y+Math.random()*20-10)+'px';
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),1000);
+  }
+}
+
+// ===== 页面导航 =====
+const PAGES=['homePage','assemblePage','myPage','roomDetailPage'];
+function showPage(pageId){
+  PAGES.forEach(id=>document.getElementById(id).classList.remove('active'));
+  const page=document.getElementById(pageId);
+  if(page)page.classList.add('active');
+  const topbar=document.getElementById('topbar');
+  const bottomNav=document.getElementById('bottomNav');
+  if(pageId==='assemblePage'){topbar.style.display='none';bottomNav.style.display='none';}
+  else{topbar.style.display='flex';bottomNav.style.display='flex';}
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(pageId==='homePage')document.querySelectorAll('.nav-item')[0].classList.add('active');
+  else if(pageId==='myPage')document.querySelectorAll('.nav-item')[3].classList.add('active');
+  if(pageId==='homePage')renderHome();
+  else if(pageId==='myPage')renderMy();
+}
+function goHome(){showPage('homePage');closeAllPanels();}
+
+// ===== 首页渲染 =====
+function renderHome(){
+  document.getElementById('topbarCoins').textContent=S.coins;
+  document.getElementById('topbarGems').textContent=S.gems;
+  const today=new Date().toDateString();
+  const signed=S.lastSignin===today;
+  if(signed){
+    document.getElementById('bannerSub').textContent=`已连续签到 ${S.signinStreak} 天！明天再来`;
+    document.getElementById('bannerBtn').textContent='明日再来 →';
+  }else{
+    document.getElementById('bannerSub').textContent=`连续签到 ${S.signinStreak} 天，明天继续有奖励`;
+    document.getElementById('bannerBtn').textContent='立即签到 →';
+  }
+  const placed=countPlaced(S);
+  const totalCap=ROOMS.reduce((a,r)=>a+r.capacity,0);
+  document.getElementById('totalProgress').textContent=`装修 ${Math.round(placed/totalCap*100)}%`;
+  renderRooms();
+  renderTaskListHome();
+  renderRankCard();
+  const pending=TASKS.filter(t=>!S.dailyTasks[t.id]).length;
+  const badge=document.getElementById('taskBadge');
+  if(pending>0){badge.style.display='';badge.textContent=pending;}else badge.style.display='none';
+}
+
+function renderRooms(){
+  const container=document.getElementById('roomsScroll');
+  container.innerHTML='';
+  ROOMS.forEach(room=>{
+    const placed=(S.placedFurniture[room.id]||[]);
+    const pct=Math.round(placed.length/room.capacity*100);
+    const styleId=S.roomStyles[room.id]||'modern';
+    const style=ROOM_STYLES.find(s=>s.id===styleId)||ROOM_STYLES[0];
+    const sceneCfg=ROOM_SCENE_CONFIG[room.id]||ROOM_SCENE_CONFIG.living;
+
+    const card=document.createElement('div');
+    card.className='room-card';
+    card.onclick=()=>showRoomDetail(room.id);
+    card.innerHTML=`
+      <div class="room-preview-3d">
+        <div class="room-3d-wall" style="background:${style.wallBg}"></div>
+        <div class="room-3d-floor" style="background:${style.floorPattern}"></div>
+        <div class="room-3d-window" style="transform:translateX(-50%) scale(${sceneCfg.windowScale||1})">${sceneCfg.window}</div>
+        <div class="room-3d-furniture">
+          ${placed.length>0?placed.slice(0,5).map(p=>{const f=FURNITURE_DATA.find(x=>x.id===p.fid);return f?`<span class="room-3d-furniture-item">${f.icon}</span>`:'';}).join(''):''}
+        </div>
+      </div>
+      <div class="room-card-footer">
+        <div class="room-name">${room.icon} ${room.name}</div>
+        <div class="room-meta">${placed.length}/${room.capacity} 件家具</div>
+        <div class="room-style-badge">${style.icon} ${style.name}</div>
+        <div class="room-progress-bar"><div class="room-progress-fill" style="width:${pct}%"></div></div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderTaskListHome(){
+  const container=document.getElementById('taskListHome');
+  container.innerHTML='';
+  TASKS.slice(0,3).forEach(task=>{
+    const done=S.dailyTasks[task.id];
+    const item=document.createElement('div');
+    item.className='task-item';
+    item.innerHTML=`<div class="task-icon-wrap">${task.icon}</div><div class="task-info"><div class="task-name">${task.name}</div><div class="task-desc">${task.desc}</div></div><div class="task-reward">🪙 +${task.reward}</div>${done?'<button class="task-btn done" disabled>已完成 ✓</button>':'<button class="task-btn" onclick="claimTask(\''+task.id+'\')">去完成</button>'}`;
+    container.appendChild(item);
+  });
+}
+
+function renderRankCard(){
+  const card=document.getElementById('rankCard');
+  const rankers=[{name:'🎨 小明',score:Math.max(S.totalCoins+50,100)},{name:'🔨 张三',score:Math.max(S.totalCoins+20,80)},{name:'🏠 你',score:S.totalCoins}].sort((a,b)=>b.score-a.score);
+  card.innerHTML=`<div class="rank-list">`+rankers.slice(0,3).map((r,i)=>`<div class="rank-item"><div class="rank-num ${i===0?'top1':i===1?'top2':'top3'}">${i+1}</div><div class="rank-icon">${r.name.includes('你')?'😊':'🤖'}</div><div class="rank-name">${r.name}</div><div class="rank-score">${r.score} 🪙</div></div>`).join('')+`</div>`;
+}
+
+// ===== 房间详情 =====
+let currentRoomId=null;
+let editMode=false;
+let furnitureDragState=null;
+
+function showRoomDetail(roomId){
+  currentRoomId=roomId;
+  editMode=false;
+  const room=ROOMS.find(r=>r.id===roomId);
+  const placed=S.placedFurniture[roomId]||[];
+  const styleId=S.roomStyles[roomId]||'modern';
+  const style=ROOM_STYLES.find(s=>s.id===styleId)||ROOM_STYLES[0];
+  const sceneCfg=ROOM_SCENE_CONFIG[roomId]||ROOM_SCENE_CONFIG.living;
+
+  document.getElementById('roomDetailName').textContent=`${room.icon} ${room.name}`;
+  document.getElementById('roomDetailMeta').textContent=`已摆放 ${placed.length} / ${room.capacity} 件家具 | ${style.icon} ${style.name}`;
+  document.getElementById('roomDetailHeaderInner').style.background=style.wallBg;
+
+  // 渲染3D房间
+  render3DRoom(roomId, style, sceneCfg);
+
+  // 装修风格选择
+  const styleGrid=document.getElementById('styleGrid');
+  styleGrid.innerHTML='';
+  ROOM_STYLES.forEach(s=>{
+    const isSelected=s.id===styleId;
+    const card=document.createElement('div');
+    card.className='style-card'+(isSelected?' selected':'');
+    card.onclick=()=>{S.roomStyles[roomId]=s.id;save();showRoomDetail(roomId);};
+    card.innerHTML=`<div class="style-card-icon">${s.icon}</div><div class="style-card-name">${s.name}</div><div class="style-card-check">${isSelected?'✓':''}</div>`;
+    styleGrid.appendChild(card);
+  });
+
+  // 编辑按钮状态
+  document.getElementById('editModeBtn').textContent='✏️ 编辑模式：拖动调整位置';
+  document.getElementById('room3dContainer').classList.remove('edit-mode');
+
+  // 已摆放列表
+  const chips=document.getElementById('roomPlacedChips');
+  if(placed.length>0){
+    chips.innerHTML=placed.map(p=>{const f=FURNITURE_DATA.find(x=>x.id===p.fid);return f?`<div class="room-chip">${f.icon} ${f.name}</div>`:'';}).join('');
+    document.getElementById('roomPlacedEmpty').style.display='none';
+  }else{
+    chips.innerHTML='';
+    document.getElementById('roomPlacedEmpty').style.display='';
+  }
+
+  // 摆放按钮
+  const btn=document.getElementById('placeFurnitureBtn');
+  if(placed.length>=room.capacity)btn.disabled=true,btn.style.opacity='0.5',btn.textContent='房间已满';
+  else btn.disabled=false,btn.style.opacity='1',btn.textContent='+ 摆放家具到房间';
+
+  showPage('roomDetailPage');
+}
+
+function render3DRoom(roomId, style, sceneCfg){
+  const scene=document.getElementById('roomScene');
+
+  // 墙面
+  document.getElementById('roomWall').style.cssText=`background:${style.wallBg};`;
+
+  // 踢脚线
+  document.getElementById('roomDivider').style.cssText=`background:${style.moldingColor};height:6px;position:absolute;bottom:30%;left:0;right:0;z-index:3;`;
+
+  // 地板
+  document.getElementById('roomFloor').style.cssText=`background:${style.floorPattern};height:30%;position:absolute;bottom:0;left:0;right:0;z-index:2;`;
+
+  // 窗户
+  const win=document.getElementById('roomWindow');
+  win.innerHTML=`
+    <div class="room-window" style="top:8%;left:50%;transform:translateX(-50%);">
+      <div class="room-curtain"><span class="room-curtain-side">${style.curtainColor.includes('rgba')&&parseFloat(style.curtainColor)>0.6?'🟥':'🎐'}</span><span class="room-curtain-side">${style.curtainColor.includes('rgba')&&parseFloat(style.curtainColor)>0.6?'🟥':'🎐'}</span></div>
+      <div class="room-window-frame" style="border-color:${style.windowFrame};">
+        <div class="room-window-pane">
+          <div class="room-window-glass" style="background:${style.windowGlass};"></div>
+          <div class="room-window-glass" style="background:${style.windowGlass};"></div>
+          <div class="room-window-glass" style="background:${style.windowGlass};"></div>
+          <div class="room-window-glass" style="background:${style.windowGlass};"></div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 墙上装饰
+  document.getElementById('roomWallDeco').textContent=style.decoEmoji;
+  document.getElementById('roomWallDeco').style.cssText=`position:absolute;z-index:5;right:${sceneCfg.wallDecoPos.right||'10%'};top:${sceneCfg.wallDecoPos.top||'20%'};font-size:22px;`;
+
+  // 家具摆放区
+  renderRoomFurniture(roomId);
+}
+
+function renderRoomFurniture(roomId){
+  const area=document.getElementById('roomFurnitureArea');
+  const placed=S.placedFurniture[roomId]||[];
+  area.innerHTML='';
+
+  if(placed.length===0){
+    document.getElementById('roomEmptyHint').style.display='flex';
+  }else{
+    document.getElementById('roomEmptyHint').style.display='none';
+    placed.forEach((p,i)=>{
+      const f=FURNITURE_DATA.find(x=>x.id===p.fid);
+      if(!f)return;
+      const el=document.createElement('div');
+      el.className='room-draggable-furniture'+(editMode?'':'placing');
+      el.dataset.index=i;
+      el.style.cssText=`left:${p.x}%;bottom:${p.y}%;transform:translate(-50%,0);`;
+      el.innerHTML=`<span class="furniture-emoji">${f.icon}</span><span class="furniture-label">${f.name}</span>`;
+      if(editMode){
+        el.addEventListener('pointerdown',onFurnitureDragStart);
+      }
+      area.appendChild(el);
+    });
+  }
+}
+
+function toggleEditMode(){
+  editMode=!editMode;
+  const btn=document.getElementById('editModeBtn');
+  const container=document.getElementById('room3dContainer');
+  if(editMode){
+    btn.textContent='✅ 退出编辑模式';
+    btn.style.background='linear-gradient(135deg,#52C41A,#3DA615)';
+    container.classList.add('edit-mode');
+    toast('拖动家具调整位置', 'success');
+  }else{
+    btn.textContent='✏️ 编辑模式：拖动调整位置';
+    btn.style.background='linear-gradient(135deg,#4A90D9,#3A7BC8)';
+    container.classList.remove('edit-mode');
+  }
+  renderRoomFurniture(currentRoomId);
+}
+
+function onFurnitureDragStart(e){
+  if(!editMode)return;
+  e.preventDefault();
+  const el=e.currentTarget;
+  const idx=parseInt(el.dataset.index);
+  const placed=S.placedFurniture[currentRoomId]||[];
+  const item=placed[idx];
+  if(!item)return;
+
+  const area=document.getElementById('roomFurnitureArea');
+  const areaRect=area.getBoundingClientRect();
+
+  function onMove(e2){
+    const x=((e2.clientX-areaRect.left)/areaRect.width)*100;
+    const y=((e2.clientY-areaRect.top)/areaRect.height)*100;
+    const cx=Math.max(5,Math.min(95,x));
+    const cy=Math.max(0,Math.min(90,y));
+    el.style.left=cx+'%';
+    el.style.bottom=cy+'%';
+    item.x=cx; item.y=cy;
+  }
+  function onUp(){
+    document.removeEventListener('pointermove',onMove);
+    document.removeEventListener('pointerup',onUp);
+    save();
+  }
+  document.addEventListener('pointermove',onMove);
+  document.addEventListener('pointerup',onUp);
+}
+
+// ===== 摆放家具 =====
+// 收集了但未摆放的家具
+function getUnplacedFurniture(){
+  const roomId=currentRoomId;
+  const placedIds=(S.placedFurniture[roomId]||[]).map(p=>p.fid);
+  const owned=S.ownedFurniture;
+  const count={};
+  owned.forEach(id=>{count[id]=(count[id]||0)+1;});
+  // 减去已摆放的
+  const placedCount={};
+  placedIds.forEach(id=>{placedCount[id]=(placedCount[id]||0)+1;});
+  const result=[];
+  Object.keys(count).forEach(id=>{
+    const avail=(count[id]||0)-(placedCount[id]||0);
+    for(let i=0;i<avail;i++) result.push(id);
+  });
+  return result;
+}
+
+let pickedFurnitureForPlace=null;
+
+function showPickFurniture(){
+  const unplaced=getUnplacedFurniture();
+  if(unplaced.length===0){toast('仓库中没有可摆放的家具！');return;}
+  pickedFurnitureForPlace=null;
+  const grid=document.getElementById('pickGrid');
+  grid.innerHTML='';
+  // 去重显示
+  const unique=[...new Set(unplaced)];
+  unique.forEach(fid=>{
+    const f=FURNITURE_DATA.find(x=>x.id===fid);
+    if(!f)return;
+    const count=unplaced.filter(id=>id===fid).length;
+    const item=document.createElement('div');
+    item.className='pick-item';
+    item.dataset.fid=fid;
+    item.innerHTML=`<div class="pick-item-icon">${f.icon}</div><div class="pick-item-name">${f.name}${count>1?' ×'+count:''}</div>`;
+    item.onclick=()=>{
+      document.querySelectorAll('.pick-item').forEach(p=>p.classList.remove('selected'));
+      item.classList.add('selected');
+      pickedFurnitureForPlace=fid;
+      document.getElementById('pickConfirmBtn').disabled=false;
+      document.getElementById('pickConfirmBtn').textContent=`放置 ${f.icon} ${f.name}`;
+    };
+    grid.appendChild(item);
+  });
+  document.getElementById('pickConfirmBtn').disabled=true;
+  document.getElementById('pickConfirmBtn').textContent='请选择一件家具';
+  document.getElementById('pickFurnitureModal').classList.add('show');
+}
+
+function closePickFurniture(){
+  document.getElementById('pickFurnitureModal').classList.remove('show');
+  pickedFurnitureForPlace=null;
+}
+
+function confirmPlaceFurniture(){
+  if(!pickedFurnitureForPlace)return;
+  const roomId=currentRoomId;
+  const room=ROOMS.find(r=>r.id===roomId);
+  if(!S.placedFurniture[roomId])S.placedFurniture[roomId]=[];
+  if(S.placedFurniture[roomId].length>=room.capacity){toast('房间已满！');closePickFurniture();return;}
+
+  // 随机位置（底部区域）
+  const x=20+Math.random()*60;
+  const y=5+Math.random()*20;
+  S.placedFurniture[roomId].push({fid:pickedFurnitureForPlace,x,y});
+  S.stats.placed++;
+  if(S.taskProgress['place3']!==undefined)S.taskProgress['place3']++;
+  save();
+  closePickFurniture();
+  toast('家具已摆放！试试拖动调整位置', 'success');
+  showRoomDetail(roomId);
+}
+
+// ===== 组装 =====
+// (组装逻辑与v3相同，简写)
+let A={furniture:null,timeLeft:0,timer:null,placedCount:0,totalParts:0,slots:[],hintUsed:false};
+
+function startAssemble(){
+  const pool=S.unlockedFurniture.filter(id=>S.ownedFurniture.filter(f=>f===id).length<3);
+  if(pool.length===0){toast('仓库满了！去放置家具吧~');return;}
+  const fid=pool[Math.floor(Math.random()*pool.length)];
+  const f=FURNITURE_DATA.find(x=>x.id===fid);
+  A={furniture:f,timeLeft:f.time,timer:null,placedCount:0,totalParts:f.parts,slots:[],hintUsed:false};
+  document.getElementById('assembleFurnitureName').textContent=`${f.icon} ${f.name}`;
+  document.getElementById('completeOverlay').classList.remove('show');
+  document.getElementById('failOverlay').classList.remove('show');
+  showPage('assemblePage');
+  buildBlueprint(f);
+  buildParts(f);
+  startTimer();
+}
+
+function buildBlueprint(f){
+  const canvas=document.getElementById('blueprintCanvas');
+  canvas.innerHTML='';
+  const preview=document.createElement('div');
+  preview.className='blueprint-furniture';
+  preview.style.cssText='position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:1;';
+  preview.innerHTML=`<div class="blueprint-furniture-icon">${f.icon}</div><div class="blueprint-furniture-label">目标样式</div>`;
+  canvas.appendChild(preview);
+  const cols=f.parts<=4?2:3;
+  const cellW=Math.min(50,(canvas.offsetWidth-40-(cols-1)*8)/cols);
+  const cellH=Math.min(46,(170-(Math.ceil(f.parts/cols)-1)*8)/Math.ceil(f.parts/cols));
+  const grid=document.createElement('div');
+  grid.style.cssText=`position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:grid;grid-template-columns:repeat(${cols},${cellW}px);gap:8px;`;
+  A.slots=[];
+  const shuffledIdx=Array.from({length:f.parts},(_,i)=>i).sort(()=>Math.random()-0.5);
+  shuffledIdx.forEach((targetIdx,displayIdx)=>{
+    A.slots.push({index:displayIdx,filled:false,targetIdx});
+    const cell=document.createElement('div');
+    cell.className='slot-cell';
+    cell.dataset.slot=displayIdx;
+    cell.style.cssText=`width:${cellW}px;height:${cellH}px;`;
+    const p=f.parts_list[targetIdx];
+    cell.innerHTML=`<span class="slot-emoji">${f.icon}</span><span class="slot-label">${p?.name||''}</span>`;
+    grid.appendChild(cell);
+  });
+  canvas.appendChild(grid);
+}
+
+function buildParts(f){
+  const grid=document.getElementById('partsGrid');
+  grid.innerHTML='';
+  document.getElementById('assembleStep').textContent=`0 / ${f.parts} 零件`;
+  document.getElementById('partsProgress').textContent=`0 / ${f.parts}`;
+  const shuffled=[...Array(f.parts).keys()].sort(()=>Math.random()-0.5);
+  shuffled.forEach(targetIdx=>{
+    const p=f.parts_list[targetIdx];
+    const cell=document.createElement('div');
+    cell.className='part-piece';
+    cell.dataset.target=targetIdx;
+    cell.style.background=p.color;
+    cell.innerHTML=`<div class="part-shape ${p.shape}" style="background:${p.color}"></div><div class="part-name">${p.name}</div><div class="part-num-badge">${targetIdx+1}</div>`;
+    cell.addEventListener('pointerdown',onPartDown);
+    grid.appendChild(cell);
+  });
+}
+
+function startTimer(){
+  updateTimerDisplay();
+  A.timer=setInterval(()=>{
+    A.timeLeft--;updateTimerDisplay();
+    if(A.timeLeft<=0){clearInterval(A.timer);A.timer=null;onAssembleFail();}
+  },1000);
+}
+
+function updateTimerDisplay(){
+  const el=document.getElementById('timerDisplay');
+  const m=String(Math.floor(A.timeLeft/60)).padStart(2,'0');
+  const s=String(A.timeLeft%60).padStart(2,'0');
+  el.textContent=`⏱ ${m}:${s}`;
+  el.className='assemble-timer'+(A.timeLeft<=10?' timer-danger':'');
+}
+
+let drag=null;
+function onPartDown(e){
+  if(A.timer===null)return;
+  const part=e.currentTarget;
+  if(part.classList.contains('placed'))return;
+  e.preventDefault();
+  part.setPointerCapture(e.pointerId);
+  const rect=part.getBoundingClientRect();
+  drag={part,clone:null,offsetX:e.clientX-rect.left,offsetY:e.clientY-rect.top,targetIdx:parseInt(part.dataset.target)};
+  const clone=part.cloneNode(true);
+  clone.className='part-piece part-drag';
+  clone.style.width=rect.width+'px';clone.style.height=rect.height+'px';
+  clone.style.left=rect.left+'px';clone.style.top=rect.top+'px';
+  document.body.appendChild(clone);
+  drag.clone=clone;
+  part.style.opacity='0.3';
+  part.addEventListener('pointermove',onPartMove);
+  part.addEventListener('pointerup',onPartUp);
+  part.addEventListener('pointercancel',onPartUp);
+}
+
+function onPartMove(e){
+  if(!drag)return;
+  drag.clone.style.left=(e.clientX-drag.offsetX)+'px';
+  drag.clone.style.top=(e.clientY-drag.offsetY)+'px';
+  document.querySelectorAll('.slot-cell').forEach(c=>c.classList.remove('highlight'));
+  const canvasRect=document.getElementById('blueprintCanvas').getBoundingClientRect();
+  A.slots.forEach((slot,i)=>{
+    if(slot.filled||slot.targetIdx!==drag.targetIdx)return;
+    const cols=A.totalParts<=4?2:3;
+    const cellW=Math.min(50,(canvasRect.width-40-(cols-1)*8)/cols);
+    const cellH=Math.min(46,(170-(Math.ceil(A.totalParts/cols)-1)*8)/Math.ceil(A.totalParts/cols));
+    const col=i%cols;const row=Math.floor(i/cols);
+    const sx=canvasRect.left+14+(cellW+8)*col+cellW/2;
+    const sy=canvasRect.top+8+(canvasRect.height*0.6)+(cellH+8)*row+cellH/2;
+    if(Math.abs(e.clientX-sx)<cellW/2+25&&Math.abs(e.clientY-sy)<cellH/2+25){
+      document.querySelector(`.slot-cell[data-slot="${i}"]`)?.classList.add('highlight');
+    }
+  });
+}
+
+function onPartUp(e){
+  if(!drag)return;
+  const {part,clone,targetIdx}=drag;
+  document.querySelectorAll('.slot-cell').forEach(c=>c.classList.remove('highlight'));
+  let placed=false;
+  const canvasRect=document.getElementById('blueprintCanvas').getBoundingClientRect();
+  A.slots.forEach((slot,i)=>{
+    if(slot.filled||slot.targetIdx!==targetIdx)return;
+    const cols=A.totalParts<=4?2:3;
+    const cellW=Math.min(50,(canvasRect.width-40-(cols-1)*8)/cols);
+    const cellH=Math.min(46,(170-(Math.ceil(A.totalParts/cols)-1)*8)/Math.ceil(A.totalParts/cols));
+    const col=i%cols;const row=Math.floor(i/cols);
+    const sx=canvasRect.left+14+(cellW+8)*col+cellW/2;
+    const sy=canvasRect.top+8+(canvasRect.height*0.6)+(cellH+8)*row+cellH/2;
+    if(Math.abs(e.clientX-sx)<cellW/2+25&&Math.abs(e.clientY-sy)<cellH/2+25){
+      slot.filled=true;A.placedCount++;part.classList.add('placed');
+      const slotEl=document.querySelector(`.slot-cell[data-slot="${i}"]`);
+      if(slotEl){
+        slotEl.classList.add('filled');
+        const p=A.furniture.parts_list[targetIdx];
+        slotEl.style.background=p.color;
+        slotEl.style.borderColor='transparent';
+        slotEl.innerHTML=`<div class="part-shape ${p.shape}" style="background:${p.color};width:55%;height:50%;"></div><span class="slot-label" style="color:rgba(255,255,255,0.6);font-size:8px;">${p.name}</span>`;
+        const ring=document.createElement('div');
+        ring.className='ring-anim';
+        ring.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:30px;height:30px;';
+        slotEl.appendChild(ring);
+        setTimeout(()=>ring.remove(),500);
+        particle(e.clientX,e.clientY,'✨');
+      }
+      document.getElementById('assembleStep').textContent=`${A.placedCount} / ${A.totalParts} 零件`;
+      document.getElementById('partsProgress').textContent=`${A.placedCount} / ${A.totalParts}`;
+      placed=true;
+      if(A.placedCount>=A.totalParts){clearInterval(A.timer);A.timer=null;setTimeout(()=>onAssembleComplete(),400);}
+    }
+  });
+  if(!placed)part.style.opacity='';
+  clone.remove();drag=null;
+  part.removeEventListener('pointermove',onPartMove);
+  part.removeEventListener('pointerup',onPartUp);
+  part.removeEventListener('pointercancel',onPartUp);
+}
+
+function useHint(){
+  if(A.hintUsed){toast('已经用过了~');return;}
+  A.hintUsed=true;
+  const firstUnfilled=A.slots.findIndex(s=>!s.filled);
+  if(firstUnfilled<0)return;
+  const slot=A.slots[firstUnfilled];
+  const partEl=document.querySelector(`.part-piece[data-target="${slot.targetIdx}"]`);
+  if(partEl&&!partEl.classList.contains('placed')){partEl.classList.add('hint-glow');setTimeout(()=>partEl.classList.remove('hint-glow'),3000);}
+  const slotEl=document.querySelector(`.slot-cell[data-slot="${firstUnfilled}"]`);
+  if(slotEl){slotEl.classList.add('highlight');setTimeout(()=>slotEl.classList.remove('highlight'),3000);}
+  toast('💡 零件和位置已高亮！','gold');
+}
+
+function onAssembleComplete(){
+  const f=A.furniture;
+  S.stats.assembled++;
+  const owned=S.ownedFurniture.filter(id=>id===f.id).length;
+  if(owned<3)S.ownedFurniture.push(f.id);
+  S.coins+=f.reward;S.totalCoins+=f.reward;
+  if(S.taskProgress['assemble1']!==undefined)S.taskProgress['assemble1']++;
+  if(S.taskProgress['assemble3']!==undefined)S.taskProgress['assemble3']++;
+  save();updateCoinDisplay();
+  document.getElementById('completeReward').textContent=`🪙 +${f.reward}`;
+  document.getElementById('completeSub').textContent=`${f.icon} ${f.name} 已入库！可去房间摆放`;
+  document.getElementById('completeOverlay').classList.add('show');
+}
+
+function onAssembleFail(){document.getElementById('failOverlay').classList.add('show');}
+function exitAssemble(){if(A.timer){clearInterval(A.timer);A.timer=null;}document.getElementById('completeOverlay').classList.remove('show');document.getElementById('failOverlay').classList.remove('show');goHome();}
+function collectFurniture(){
+  document.getElementById('completeOverlay').classList.remove('show');
+  const f=A.furniture;
+  toast(`获得 ${f.icon} ${f.name}！去房间摆放吧`, 'success');
+  exitAssemble();
+}
+
+// ===== 广告 =====
+function showAd(callback){
+  const modal=document.getElementById('adModal');
+  const progress=document.getElementById('adProgress');
+  modal.classList.add('show');progress.style.width='0%';
+  let pct=0;
+  const iv=setInterval(()=>{
+    pct+=2;progress.style.width=pct+'%';
+    document.getElementById('adSkip').textContent=`剩余 ${Math.ceil((100-pct)/2)} 秒`;
+    if(pct>=100){clearInterval(iv);modal.classList.remove('show');S.stats.adsWatched++;S.coins+=10;S.totalCoins+=10;save();updateCoinDisplay();toast('观看完成！+10金币','gold');if(callback)callback();}
+  },60);
+}
+function showAdForDouble(){showAd(()=>{const bonus=A.furniture.reward;S.coins+=bonus;S.totalCoins+=bonus;save();updateCoinDisplay();toast(`双倍奖励！+${bonus}金币`,'gold');collectFurniture();});}
+function showAdForRetry(){showAd(()=>{document.getElementById('failOverlay').classList.remove('show');A.timeLeft=10;startTimer();});}
+function updateCoinDisplay(){document.getElementById('topbarCoins').textContent=S.coins;document.getElementById('topbarGems').textContent=S.gems;}
+
+// ===== 签到 =====
+function showSigninPanel(){
+  const today=new Date().toDateString();
+  const signed=S.lastSignin===today;
+  const days=document.getElementById('signinDays');
+  days.innerHTML='';
+  for(let i=0;i<7;i++){
+    const reward=SIGNIN_REWARDS[i];
+    const isToday=i===S.signinStreak%7;
+    const isDone=i<S.signinStreak%7&&S.lastSignin!==today;
+    const div=document.createElement('div');
+    div.className='signin-day'+(isDone?' done':isToday?' today':'');
+    div.innerHTML=`<span class="signin-day-icon">${isDone?'✓':'📅'}</span><span style="font-size:10px">🪙${reward}</span><span class="signin-day-num">第${i+1}天</span>`;
+    days.appendChild(div);
+  }
+  document.getElementById('signinSub').textContent=`连续签到 ${S.signinStreak} 天`;
+  const btn=document.getElementById('signinBtn');
+  if(signed){btn.textContent='今日已签到 ✓';btn.disabled=true;btn.style.opacity='0.5';}
+  else{btn.textContent=`立即签到 (+${SIGNIN_REWARDS[S.signinStreak%7]}金币)`;btn.disabled=false;btn.style.opacity='1';}
+  openPanel('signinPanel');
+}
+function doSignin(){
+  const today=new Date().toDateString();
+  if(S.lastSignin===today)return;
+  const y=new Date();y.setDate(y.getDate()-1);
+  if(S.lastSignin===y.toDateString())S.signinStreak++;else S.signinStreak=1;
+  S.lastSignin=today;S.totalSignins++;
+  const reward=SIGNIN_REWARDS[(S.signinStreak-1)%7];
+  S.coins+=reward;S.totalCoins+=reward;
+  S.dailyTasks['signin']=true;
+  save();updateCoinDisplay();
+  document.getElementById('rewardIcon').textContent='🎁';
+  document.getElementById('rewardTitle').textContent='签到成功！';
+  document.getElementById('rewardSub').textContent=`连续签到 ${S.signinStreak} 天`;
+  document.getElementById('rewardItem').innerHTML=`🪙 +${reward}`;
+  closeAllPanels();
+  document.getElementById('rewardModal').classList.add('show');
+  renderHome();
+}
+function closeReward(){document.getElementById('rewardModal').classList.remove('show');}
+
+// ===== 任务 =====
+function claimTask(taskId){
+  const task=TASKS.find(t=>t.id===taskId);
+  if(!task)return;
+  const prog=S.taskProgress[taskId]||0;
+  if(task.target&&prog<task.target){toast(`${task.name} (${prog}/${task.target})`);return;}
+  if(taskId==='place3'&&countPlaced(S)<3){toast('摆放3件家具后领取');return;}
+  if(taskId==='assemble1'&&S.stats.assembled<1){toast('先完成一次组装吧~');return;}
+  S.dailyTasks[taskId]=true;
+  S.coins+=task.reward;S.totalCoins+=task.reward;
+  if(task.target)S.taskProgress[taskId]=0;
+  save();updateCoinDisplay();
+  toast(`任务完成！+${task.reward}金币`,'success');
+  renderHome();renderTasksPanel();
+}
+function renderTasksPanel(){
+  const c=document.getElementById('taskList');
+  c.innerHTML='';
+  TASKS.forEach(task=>{
+    const done=S.dailyTasks[task.id];
+    const prog=S.taskProgress[taskId]||0;
+    const show=task.target?` (${Math.min(S.taskProgress[task.id]||0,task.target)}/${task.target})`:'';
+    const item=document.createElement('div');
+    item.className='task-item';
+    item.innerHTML=`<div class="task-icon-wrap">${task.icon}</div><div class="task-info"><div class="task-name">${task.name}${show}</div><div class="task-desc">${task.desc}</div></div><div class="task-reward">🪙 +${task.reward}</div>${done?'<button class="task-btn done" disabled>已完成 ✓</button>':'<button class="task-btn" onclick="claimTask(\''+task.id+'\')">去完成</button>'}`;
+    c.appendChild(item);
+  });
+}
+function showTasksPanel(){renderTasksPanel();openPanel('tasksPanel');}
+
+// ===== 仓库 =====
+let storeTab='owned';
+function showStorePanel(){switchStoreTab('owned');openPanel('storePanel');}
+function switchStoreTab(tab){
+  storeTab=tab;
+  document.querySelectorAll('.store-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.store-tab')[tab==='owned'?0:1].classList.add('active');
+  const grid=document.getElementById('furnitureShowcase');
+  grid.innerHTML='';
+  const items=tab==='owned'?FURNITURE_DATA.filter(f=>S.ownedFurniture.includes(f.id)):FURNITURE_DATA;
+  if(items.length===0){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-light);font-size:14px;">还没有家具，快去组装吧~</div>';return;}
+  items.forEach(f=>{
+    const owned=S.ownedFurniture.includes(f.id);
+    const count=S.ownedFurniture.filter(id=>id===f.id).length;
+    const locked=!S.unlockedFurniture.includes(f.id);
+    const card=document.createElement('div');
+    card.className='furniture-card'+(owned?' owned':'')+(locked?' locked':'');
+    card.innerHTML=`<div class="furniture-card-icon">${f.icon}</div><div class="furniture-card-name">${f.name}</div><div class="furniture-card-count">${owned?`<span>×${count}</span>`:locked?'🔒':'🆓'}</div>`;
+    if(!locked)card.onclick=()=>toast(owned?`${f.icon} ${f.name} 已拥有！去房间摆放`:`${f.icon} ${f.name} — 去组装吧！`);
+    grid.appendChild(card);
+  });
+}
+
+// ===== 我的页面 =====
+function showMy(){showPage('myPage');renderMy();}
+function renderMy(){
+  document.getElementById('myTotalFurniture').textContent=S.ownedFurniture.length;
+  document.getElementById('myTotalPlaced').textContent=countPlaced(S);
+  document.getElementById('myTotalCoins').textContent=S.totalCoins;
+  document.getElementById('myPlayerId').textContent=String(S.totalCoins).slice(0,6);
+  const grid=document.getElementById('achievementGrid');
+  grid.innerHTML='';
+  ACHIEVEMENTS.slice(0,6).forEach(a=>{
+    const done=a.cond(S);
+    const div=document.createElement('div');
+    div.className='achievement-card'+(done?' done':'');
+    div.innerHTML=`<div class="achievement-card-icon">${a.icon}</div><div><div class="achievement-card-name">${a.name}</div><div class="achievement-card-desc">${a.desc}</div><div class="achievement-card-status">${done?'🏆 已达成':'🔒 未达成'}</div></div>`;
+    grid.appendChild(div);
+  });
+  const list=document.getElementById('myRankList');
+  const rankers=[{name:'🎨 小明',score:Math.max(S.totalCoins+50,100)},{name:'🔨 张三',score:Math.max(S.totalCoins+20,80)},{name:'🏠 你',score:S.totalCoins}].sort((a,b)=>b.score-a.score);
+  list.innerHTML=rankers.map((r,i)=>`<div class="rank-item"><div class="rank-num ${i===0?'top1':i===1?'top2':'top3'}">${i+1}</div><div class="rank-icon">${r.name.includes('你')?'😊':'🤖'}</div><div class="rank-name">${r.name}</div><div class="rank-score">${r.score} 🪙</div></div>`).join('');
+}
+
+// ===== 分享 =====
+function shareGame(){
+  if(navigator.share)navigator.share({title:'装个家',text:'我用碎片时间装修了我的家，你也来试试！',url:location.href});
+  else{navigator.clipboard?.writeText(location.href);toast('链接已复制，快去分享吧！','success');}
+}
+
+// ===== 面板 =====
+function openPanel(id){document.getElementById('panelOverlay').classList.add('open');document.getElementById(id).classList.add('open');}
+function closeAllPanels(){document.getElementById('panelOverlay').classList.remove('open');document.querySelectorAll('.panel').forEach(p=>p.classList.remove('open'));}
+
+// ===== 引导 =====
+const G_STEPS=GUIDE_STEPS;
+function showGuide(){if(S.guideStep>=G_STEPS.length)return;const s=G_STEPS[S.guideStep];document.getElementById('guideHand').textContent=s.hand;document.getElementById('guideTitle').textContent=s.title;document.getElementById('guideDesc').textContent=s.desc;document.getElementById('guideStep').textContent=`第 ${S.guideStep+1}/${G_STEPS.length} 步`;document.getElementById('guideBtn').textContent=s.btn;document.getElementById('guideOverlay').classList.add('show');}
+function nextGuide(){S.guideStep++;save();if(S.guideStep>=G_STEPS.length)document.getElementById('guideOverlay').classList.remove('show');else showGuide();}
+
+// ===== 启动 =====
+load();updateCoinDisplay();renderHome();
+if(!S.dailyTasks['login']){S.dailyTasks['login']=true;S.coins+=10;S.totalCoins+=10;save();updateCoinDisplay();}
+setTimeout(()=>{if(S.guideStep<G_STEPS.length)showGuide();},500);
+</script>
+</body>
+</html>
