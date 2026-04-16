@@ -5,14 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>装个家</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; }
+* { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; }
+:root {
+  --primary: #E07B39;
+  --primary-dark: #C4612A;
+  --secondary: #4A90D9;
+  --gold: #FFD700;
+  --success: #52C41A;
+  --bg: #F5F0EB;
+  --card: #FFFFFF;
+  --text: #333333;
+  --text-light: #888888;
+  --shadow: 0 4px 20px rgba(0,0,0,0.08);
+  --radius: 16px;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
-  background: #F5F0EB;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+  background: var(--bg);
   overflow: hidden;
-  height: 100vh;
+  height: 100dvh;
   width: 100vw;
 }
+
 #app {
   width: 100%;
   height: 100%;
@@ -20,9 +35,10 @@ body {
   margin: 0 auto;
   position: relative;
   overflow: hidden;
+  background: var(--bg);
 }
 
-/* 页面通用 */
+/* ===== 通用 ===== */
 .page {
   position: absolute;
   inset: 0;
@@ -30,1078 +46,1505 @@ body {
   flex-direction: column;
   opacity: 0;
   pointer-events: none;
+  transition: opacity 0.35s cubic-bezier(0.4,0,0.2,1);
+  overflow: hidden;
+}
+.page.active { opacity: 1; pointer-events: all; }
+
+.panel {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(100%);
+  width: 100%;
+  max-width: 500px;
+  background: var(--card);
+  border-radius: 24px 24px 0 0;
+  padding: 20px 16px 40px;
+  z-index: 300;
+  transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.12);
+}
+.panel.open { transform: translateX(-50%) translateY(0); }
+.panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 299;
+  opacity: 0;
+  pointer-events: none;
   transition: opacity 0.3s;
 }
-.page.active {
-  opacity: 1;
-  pointer-events: all;
-}
+.panel-overlay.open { opacity: 1; pointer-events: all; }
 
-/* 顶部栏 */
+/* 顶部状态栏 */
 .topbar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: #fff;
-  border-bottom: 1px solid #EEE;
+  justify-content: space-between;
+  padding: 12px 16px 8px;
+  background: var(--card);
   flex-shrink: 0;
+  z-index: 10;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
 }
-.topbar-title {
-  font-size: 18px;
+.topbar-left { display: flex; align-items: center; gap: 8px; }
+.game-logo { font-size: 20px; }
+.topbar-title { font-size: 17px; font-weight: 700; color: var(--text); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.resource-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #F7F4F0;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 13px;
   font-weight: 600;
-  color: #333;
 }
-.topbar-info {
+.resource-icon { font-size: 14px; }
+.resource-num { color: var(--text); }
+.btn-icon {
+  width: 34px; height: 34px;
+  background: #F7F4F0;
+  border: none;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+}
+.btn-icon:active { transform: scale(0.9); background: #EDE9E3; }
+
+/* ===== 首页 ===== */
+.home-page { background: var(--bg); }
+
+.home-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 0 90px;
+  scroll-behavior: smooth;
+}
+
+.home-scroll::-webkit-scrollbar { width: 0; }
+
+/* Banner */
+.home-banner {
+  margin: 12px 16px;
+  background: linear-gradient(135deg, #E07B39, #F4A460);
+  border-radius: 20px;
+  padding: 20px 20px 18px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 24px rgba(224,123,57,0.3);
+}
+.banner-bg {
+  position: absolute;
+  right: -10px;
+  bottom: -10px;
+  font-size: 80px;
+  opacity: 0.15;
+  pointer-events: none;
+}
+.banner-label {
+  font-size: 11px;
+  background: rgba(255,255,255,0.25);
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+.banner-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.banner-sub { font-size: 12px; opacity: 0.85; }
+.banner-btn {
+  margin-top: 12px;
+  background: rgba(255,255,255,0.95);
+  color: var(--primary);
+  border: none;
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 房间卡片 */
+.section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 16px 16px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.section-title .more {
+  font-size: 12px;
+  color: var(--text-light);
+  font-weight: 400;
+}
+
+.rooms-scroll {
   display: flex;
   gap: 12px;
-  align-items: center;
+  padding: 0 16px 8px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
 }
-.coin-display {
-  background: #FFF8E6;
-  border: 1px solid #FFE4B5;
-  border-radius: 20px;
-  padding: 4px 12px;
-  font-size: 14px;
-  color: #D4881C;
-  font-weight: 600;
-}
-.coin-icon { margin-right: 4px; }
+.rooms-scroll::-webkit-scrollbar { display: none; }
 
-/* 底部导航 */
+.room-card {
+  flex-shrink: 0;
+  width: 160px;
+  background: var(--card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  scroll-snap-align: start;
+}
+.room-card:active { transform: scale(0.97); }
+.room-preview {
+  height: 110px;
+  background: #F0EBE5;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.room-floor-grid {
+  position: absolute;
+  inset: 8px;
+  background: repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(0,0,0,0.06) 19px, rgba(0,0,0,0.06) 20px),
+              repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(0,0,0,0.06) 19px, rgba(0,0,0,0.06) 20px);
+}
+.room-walls {
+  position: absolute;
+  inset: 0;
+  border-bottom: 3px solid rgba(0,0,0,0.08);
+}
+.room-furniture-display {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px 6px 6px;
+  justify-content: center;
+  align-items: flex-end;
+  height: 100%;
+}
+.room-furniture-icon {
+  font-size: 22px;
+  opacity: 0.9;
+  animation: furnitureBob 3s ease-in-out infinite;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15));
+}
+@keyframes furnitureBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.room-card-footer {
+  padding: 10px 12px;
+}
+.room-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.room-meta { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.room-progress-bar {
+  height: 4px;
+  background: #F0EBE5;
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.room-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), #F4A460);
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+
+/* 快捷功能 */
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 0 16px;
+}
+.quick-item {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 14px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s;
+  border: none;
+  width: 100%;
+}
+.quick-item:active { transform: scale(0.95); }
+.quick-icon { font-size: 28px; }
+.quick-text { font-size: 12px; color: var(--text); font-weight: 500; }
+.quick-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #FF4757;
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+/* 每日任务 */
+.task-list { padding: 0 16px; }
+.task-item {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.task-icon-wrap {
+  width: 44px; height: 44px;
+  background: #FFF5EE;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.task-info { flex: 1; }
+.task-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.task-desc { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.task-reward { display: flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 600; color: var(--primary); }
+.task-btn {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  border: none;
+  border-radius: 18px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s, opacity 0.15s;
+  display: flex; align-items: center; gap: 4px;
+}
+.task-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.task-btn.done { background: #F0EBE5; color: var(--success); }
+
+/* ===== 组装页 ===== */
+.assemble-page {
+  background: linear-gradient(180deg, #1A1A2E 0%, #16213E 100%);
+}
+.assemble-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+.assemble-back {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 8px 4px 0;
+}
+.assemble-info {
+  text-align: center;
+  flex: 1;
+}
+.assemble-name { font-size: 15px; font-weight: 700; color: #fff; }
+.assemble-step { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+.assemble-timer {
+  background: rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 60px;
+  text-align: center;
+}
+.timer-danger { color: #FF6B6B; animation: timerFlash 0.5s infinite alternate; }
+@keyframes timerFlash { from { opacity: 1; } to { opacity: 0.5; } }
+
+.assemble-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 12px;
+  overflow: hidden;
+}
+
+/* 蓝图区域 */
+.blueprint-section {
+  background: rgba(255,255,255,0.04);
+  border-radius: 20px;
+  padding: 14px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.blueprint-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.blueprint-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  font-weight: 500;
+}
+.blueprint-hint {
+  font-size: 11px;
+  color: #FFD700;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 3px;
+}
+.blueprint-canvas {
+  background: #0D1B3E;
+  border-radius: 14px;
+  height: 180px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.blueprint-target {
+  position: relative;
+  z-index: 2;
+}
+
+/* 放置区域（蓝图中的目标格子） */
+.target-grid {
+  display: grid;
+  gap: 6px;
+  position: relative;
+  z-index: 2;
+}
+.target-cell {
+  border: 2px dashed rgba(255,255,255,0.15);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.25s;
+  background: rgba(255,255,255,0.03);
+  position: relative;
+}
+.target-cell:hover { border-color: rgba(255,255,255,0.3); }
+.target-cell.filled {
+  border-color: transparent;
+  background: transparent;
+}
+.target-cell.highlight {
+  border-color: #FFD700 !important;
+  background: rgba(255,215,0,0.12) !important;
+  animation: cellPulse 0.8s infinite alternate;
+}
+@keyframes cellPulse {
+  from { box-shadow: 0 0 6px 1px rgba(255,215,0,0.4); }
+  to { box-shadow: 0 0 16px 4px rgba(255,215,0,0.8); }
+}
+.target-cell .cell-num {
+  position: absolute;
+  top: 2px; left: 4px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.2);
+  font-weight: 700;
+}
+
+/* 零件区域 */
+.parts-section {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border-radius: 20px;
+  padding: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.parts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+.parts-label { font-size: 11px; color: rgba(255,255,255,0.4); }
+.parts-progress { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 600; }
+.parts-grid-wrap {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.parts-grid-wrap::-webkit-scrollbar { width: 0; }
+.parts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+/* 零件 */
+.part-cell {
+  aspect-ratio: 1;
+  background: var(--primary);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  position: relative;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+  box-shadow: 0 4px 12px rgba(224,123,57,0.4);
+  overflow: hidden;
+}
+.part-cell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent 50%);
+  border-radius: 14px;
+}
+.part-cell:active { cursor: grabbing; transform: scale(1.08); }
+.part-cell.placed {
+  opacity: 0.2;
+  pointer-events: none;
+  transform: scale(0.9);
+}
+.part-cell.hint {
+  animation: partHint 1s infinite alternate;
+}
+@keyframes partHint {
+  from { box-shadow: 0 0 8px 2px rgba(255,215,0,0.5); }
+  to { box-shadow: 0 0 20px 6px rgba(255,215,0,1); }
+}
+.part-num {
+  font-size: 20px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.9);
+  z-index: 1;
+}
+.part-icon { font-size: 28px; margin-bottom: 2px; z-index: 1; }
+
+/* 拖拽预览 */
+.part-drag-preview {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.92;
+  transform: scale(1.12) rotate(3deg);
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.35));
+}
+
+/* 放置成功动画 */
+.part-success-ring {
+  position: absolute;
+  width: 50px; height: 50px;
+  border: 3px solid var(--gold);
+  border-radius: 50%;
+  animation: ringExpand 0.5s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes ringExpand {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+/* 完成/失败遮罩 */
+.assemble-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+.assemble-overlay.show { opacity: 1; pointer-events: all; }
+.overlay-icon { font-size: 72px; margin-bottom: 16px; animation: overlayPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes overlayPop { from { transform: scale(0); } to { transform: scale(1); } }
+.overlay-title { font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+.overlay-sub { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 6px; }
+.overlay-reward {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,215,0,0.15);
+  border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 24px;
+}
+.overlay-btns { display: flex; gap: 12px; }
+.overlay-btn {
+  border: none;
+  border-radius: 24px;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.overlay-btn:active { transform: scale(0.95); }
+.overlay-btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+}
+.overlay-btn-secondary {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.overlay-btn-ad {
+  background: linear-gradient(135deg, #FF6B6B, #EE5A5A);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ===== 底部导航 ===== */
 .bottom-nav {
   display: flex;
-  background: #fff;
-  border-top: 1px solid #EEE;
-  padding: 8px 0;
+  background: var(--card);
+  border-top: 1px solid rgba(0,0,0,0.06);
+  padding: 6px 0 8px;
   flex-shrink: 0;
+  z-index: 50;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
 }
 .nav-item {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 6px;
+  gap: 3px;
+  padding: 6px 4px;
   cursor: pointer;
+  border: none;
+  background: none;
   transition: transform 0.15s;
-  -webkit-tap-highlight-color: transparent;
+  position: relative;
 }
 .nav-item:active { transform: scale(0.92); }
-.nav-icon { font-size: 24px; }
-.nav-label { font-size: 11px; color: #999; }
-.nav-item.active .nav-label { color: #E07B39; }
-
-/* ===== 首页 ===== */
-.home-page { background: #F5F0EB; }
-.home-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-}
-
-/* 房屋卡片 */
-.house-card {
-  background: #fff;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  margin-bottom: 16px;
-}
-.house-preview {
-  position: relative;
-  height: 220px;
-  background: #EDE8E3;
-  overflow: hidden;
-}
-/* 房间地板网格 */
-.room-floor {
+.nav-icon { font-size: 24px; transition: transform 0.2s; }
+.nav-label { font-size: 10px; color: var(--text-light); font-weight: 500; transition: color 0.2s; }
+.nav-item.active .nav-icon { transform: translateY(-2px); }
+.nav-item.active .nav-label { color: var(--primary); font-weight: 600; }
+.nav-item.active::before {
+  content: '';
   position: absolute;
-  inset: 20px 10px;
-  background: repeating-linear-gradient(
-    90deg, transparent, transparent 29px, #DDD8D2 29px, #DDD8D2 30px
-  ),
-  repeating-linear-gradient(
-    0deg, transparent, transparent 29px, #DDD8D2 29px, #DDD8D2 30px
-  );
-  border-radius: 4px;
-}
-.room-label {
-  position: absolute;
-  top: 8px;
-  left: 12px;
-  background: rgba(0,0,0,0.45);
-  color: #fff;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 10px;
-}
-.progress-bar-wrap {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  right: 12px;
-}
-.progress-label {
-  font-size: 11px;
-  color: #666;
-  margin-bottom: 4px;
-  display: flex;
-  justify-content: space-between;
-}
-.progress-bar {
-  height: 8px;
-  background: #E8E3DD;
-  border-radius: 4px;
-  overflow: hidden;
-}
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #E07B39, #F4A460);
-  border-radius: 4px;
-  transition: width 0.5s ease;
-  width: 0%;
-}
-.house-footer {
-  padding: 12px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.house-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: #333;
-}
-.house-meta { font-size: 12px; color: #999; }
-.btn-assemble {
-  background: linear-gradient(135deg, #E07B39, #D4881C);
-  color: #fff;
-  border: none;
-  border-radius: 20px;
-  padding: 8px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 3px 10px rgba(224,123,57,0.35);
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-.btn-assemble:active {
-  transform: scale(0.95);
-  box-shadow: 0 2px 6px rgba(224,123,57,0.3);
+  top: -6px;
+  width: 24px; height: 3px;
+  background: var(--primary);
+  border-radius: 0 0 2px 2px;
 }
 
-/* 快捷入口 */
-.quick-actions {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-.quick-btn {
-  flex: 1;
-  background: #fff;
-  border: none;
-  border-radius: 12px;
-  padding: 14px 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  transition: transform 0.15s;
-}
-.quick-btn:active { transform: scale(0.96); }
-.quick-icon { font-size: 28px; }
-.quick-text { font-size: 13px; color: #555; font-weight: 500; }
-
-/* 进度总览 */
-.overview-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-}
-.overview-title {
-  font-size: 14px;
-  color: #999;
-  margin-bottom: 12px;
-}
-.overview-grid {
+/* ===== 签到面板 ===== */
+.signin-content { padding: 0 4px; }
+.signin-title { font-size: 16px; font-weight: 800; color: var(--text); text-align: center; margin-bottom: 16px; }
+.signin-sub { font-size: 12px; color: var(--text-light); text-align: center; margin-top: -12px; margin-bottom: 16px; }
+.signin-days {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 16px;
 }
-.overview-item {
-  background: #F9F7F4;
+.signin-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  background: #F7F4F0;
   border-radius: 10px;
-  padding: 10px 8px;
-  text-align: center;
-}
-.overview-num {
-  font-size: 22px;
-  font-weight: 700;
-  color: #E07B39;
-}
-.overview-name { font-size: 11px; color: #999; margin-top: 2px; }
-
-/* ===== 组装页 ===== */
-.assemble-page { background: #1A1A2E; }
-.assemble-header {
-  padding: 12px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #16213E;
-  flex-shrink: 0;
-}
-.assemble-title {
-  color: #fff;
-  font-size: 16px;
-  font-weight: 600;
-}
-.assemble-close {
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 4px;
-}
-.timer-display {
-  background: rgba(255,255,255,0.1);
-  border-radius: 20px;
-  padding: 4px 14px;
-  font-size: 14px;
-  color: #fff;
-}
-.timer-warning { color: #FF6B6B; animation: pulse 0.5s infinite alternate; }
-@keyframes pulse { from { opacity: 1; } to { opacity: 0.6; } }
-
-/* 组装区域 */
-.assemble-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 12px;
-  gap: 12px;
-  overflow: hidden;
-}
-
-/* 目标图纸 */
-.blueprint-zone {
-  background: #0F3460;
-  border-radius: 16px;
-  padding: 12px;
-  flex-shrink: 0;
-}
-.blueprint-label {
-  color: #A0C4E8;
   font-size: 11px;
-  margin-bottom: 8px;
-  text-align: center;
+  color: var(--text-light);
 }
-.blueprint-canvas-wrap {
-  background: #0A2540;
-  border-radius: 12px;
-  height: 160px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-}
-
-/* 零件区域 */
-.parts-zone {
-  flex: 1;
-  background: #16213E;
-  border-radius: 16px;
-  padding: 12px;
-  position: relative;
-  overflow: hidden;
-}
-.parts-label {
-  color: rgba(255,255,255,0.5);
-  font-size: 11px;
-  margin-bottom: 8px;
-}
-.parts-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  align-content: flex-start;
-  height: calc(100% - 20px);
-  overflow-y: auto;
-}
-
-/* 零件块 */
-.part-block {
-  border-radius: 8px;
-  cursor: grab;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  color: rgba(255,255,255,0.7);
-  font-weight: 600;
-  transition: transform 0.1s, box-shadow 0.1s;
-  user-select: none;
-  position: relative;
-  flex-shrink: 0;
-}
-.part-block:active { cursor: grabbing; transform: scale(1.08); }
-.part-block.placed {
-  opacity: 0.3;
-  pointer-events: none;
-  transform: scale(0.9);
-}
-.part-block.hint-glow {
-  box-shadow: 0 0 16px 4px rgba(255, 215, 0, 0.8);
-  animation: glowPulse 0.8s infinite alternate;
-}
-@keyframes glowPulse {
-  from { box-shadow: 0 0 8px 2px rgba(255, 215, 0, 0.6); }
-  to { box-shadow: 0 0 20px 6px rgba(255, 215, 0, 1); }
-}
-
-/* 拖拽中的零件 */
-.part-dragging {
-  position: fixed;
-  pointer-events: none;
-  z-index: 1000;
-  opacity: 0.9;
-  transform: scale(1.1) rotate(3deg);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-}
-
-/* 放置区 */
-.drop-zone {
-  position: absolute;
-  border: 2px dashed rgba(255,255,255,0.15);
-  border-radius: 8px;
-  transition: border-color 0.2s, background 0.2s;
-}
-.drop-zone.drag-over {
-  border-color: #FFD700;
-  background: rgba(255,215,0,0.08);
-}
-.drop-zone.filled {
-  border-color: transparent;
-  background: transparent;
-}
-
-/* 完成特效 */
-.complete-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.75);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s;
-  z-index: 50;
-}
-.complete-overlay.show {
-  opacity: 1;
-  pointer-events: all;
-}
-.complete-icon { font-size: 64px; margin-bottom: 12px; }
-.complete-text { color: #fff; font-size: 24px; font-weight: 700; }
-.complete-sub { color: rgba(255,255,255,0.6); font-size: 14px; margin-top: 6px; }
-
-/* 失败界面 */
-.fail-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.8);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s;
-  z-index: 50;
-}
-.fail-overlay.show {
-  opacity: 1;
-  pointer-events: all;
-}
-.fail-icon { font-size: 48px; margin-bottom: 12px; }
-.fail-text { color: #fff; font-size: 20px; font-weight: 600; margin-bottom: 20px; }
-.fail-btns { display: flex; gap: 12px; }
-.fail-btn {
+.signin-day.today { background: #FFF5EE; border: 1px solid var(--primary); color: var(--primary); }
+.signin-day.done { background: #F6FFED; border: 1px solid var(--success); color: var(--success); }
+.signin-day-icon { font-size: 20px; }
+.signin-reward-icon { font-size: 14px; }
+.signin-day-num { font-size: 10px; font-weight: 600; }
+.signin-claim-btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
   border: none;
   border-radius: 24px;
-  padding: 10px 24px;
-  font-size: 14px;
-  font-weight: 600;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
-  transition: transform 0.15s;
-}
-.fail-btn:active { transform: scale(0.95); }
-.fail-btn-primary {
-  background: linear-gradient(135deg, #E07B39, #D4881C);
-  color: #fff;
-}
-.fail-btn-secondary {
-  background: rgba(255,255,255,0.15);
-  color: #fff;
 }
 
-/* ===== 仓库页 ===== */
-.store-page { background: #F5F0EB; }
-.store-content {
+/* ===== 任务面板 ===== */
+.tasks-content { padding: 0 4px; }
+.tasks-title { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 14px; }
+.task-list-panel { display: flex; flex-direction: column; gap: 10px; }
+
+/* ===== 仓库面板 ===== */
+.store-content { padding: 0 4px; }
+.store-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.store-tab {
   flex: 1;
-  overflow-y: auto;
-  padding: 16px;
+  padding: 8px;
+  background: #F7F4F0;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all 0.2s;
 }
-.store-section {
-  margin-bottom: 20px;
+.store-tab.active {
+  background: var(--primary);
+  color: #fff;
 }
-.store-section-title {
-  font-size: 14px;
-  color: #999;
-  margin-bottom: 10px;
-  font-weight: 500;
-}
-.furniture-grid {
+.furniture-showcase {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
 }
-.furniture-item {
-  background: #fff;
+.furniture-card {
+  background: #F9F7F4;
+  border-radius: 14px;
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  border: 2px solid transparent;
+  position: relative;
+}
+.furniture-card:active { transform: scale(0.96); }
+.furniture-card.owned { border-color: var(--success); background: #F6FFED; }
+.furniture-card.locked { opacity: 0.5; }
+.furniture-card.placed::after {
+  content: '✅';
+  position: absolute;
+  top: 4px; right: 4px;
+  font-size: 12px;
+}
+.furniture-card-icon { font-size: 36px; }
+.furniture-card-name { font-size: 12px; font-weight: 600; color: var(--text); text-align: center; }
+.furniture-card-count { font-size: 11px; color: var(--text-light); }
+.furniture-card-count span { color: var(--primary); font-weight: 700; }
+
+/* ===== 我的页面 ===== */
+.my-page { background: var(--bg); }
+.my-header {
+  background: linear-gradient(135deg, var(--primary), #F4A460);
+  padding: 24px 16px 40px;
+  color: #fff;
+}
+.my-user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.my-avatar {
+  width: 56px; height: 56px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  border: 2px solid rgba(255,255,255,0.4);
+}
+.my-name { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+.my-id { font-size: 12px; opacity: 0.75; }
+.my-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 14px;
+  padding: 14px 8px;
+}
+.my-stat { text-align: center; }
+.my-stat-num { font-size: 20px; font-weight: 800; }
+.my-stat-label { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+.my-body {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: -24px;
+  padding: 0 16px 100px;
+}
+.my-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.my-card-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+.rank-list { display: flex; flex-direction: column; gap: 10px; }
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #F5F0EB;
+}
+.rank-item:last-child { border-bottom: none; }
+.rank-num {
+  width: 22px; height: 22px;
+  background: #F0EBE5;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-light);
+  flex-shrink: 0;
+}
+.rank-num.top1 { background: #FFF3E0; color: #E65100; }
+.rank-num.top2 { background: #FFF8E1; color: #F57F17; }
+.rank-num.top3 { background: #FFFDE7; color: #F9A825; }
+.rank-icon { font-size: 24px; }
+.rank-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--text); }
+.rank-score { font-size: 13px; font-weight: 700; color: var(--primary); }
+
+/* 成就网格 */
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.achievement-card {
+  background: #F9F7F4;
   border-radius: 12px;
-  aspect-ratio: 1;
+  padding: 14px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.achievement-card.done { background: #F6FFED; }
+.achievement-card-icon { font-size: 28px; flex-shrink: 0; }
+.achievement-card-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.achievement-card-desc { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.achievement-card-status { font-size: 11px; color: var(--success); font-weight: 600; }
+
+/* 分享按钮 */
+.share-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #07C160, #06AD56);
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ===== 房间详情页 ===== */
+.room-detail-page { background: var(--bg); }
+.room-detail-header {
+  background: linear-gradient(135deg, #E07B39, #D4881C);
+  padding: 20px 16px 60px;
+  color: #fff;
+}
+.room-detail-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+.room-detail-meta { font-size: 12px; opacity: 0.8; }
+.room-detail-body {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: -40px;
+  padding: 0 16px 100px;
+}
+.room-visual {
+  background: #F0EBE5;
+  border-radius: 20px;
+  height: 200px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  box-shadow: var(--shadow);
+}
+.room-visual-grid {
+  position: absolute;
+  inset: 12px;
+  background: repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(0,0,0,0.05) 24px, rgba(0,0,0,0.05) 25px),
+              repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(0,0,0,0.05) 24px, rgba(0,0,0,0.05) 25px);
+}
+.room-visual-items {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 12px;
+  justify-content: center;
+  align-items: flex-end;
+}
+.room-viz-furniture {
+  font-size: 32px;
+  filter: drop-shadow(0 3px 3px rgba(0,0,0,0.15));
+}
+.room-placed-list {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.room-placed-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+.room-placed-items { display: flex; flex-wrap: wrap; gap: 8px; }
+.room-placed-chip {
+  display: flex; align-items: center; gap: 4px;
+  background: #F9F7F4;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--text);
+}
+.room-empty { text-align: center; padding: 24px; color: var(--text-light); font-size: 13px; }
+.room-cta {
+  margin-top: 16px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+}
+
+/* ===== Toast ===== */
+.toast-container {
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  align-items: center;
+}
+.toast {
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 1.2s forwards;
+  backdrop-filter: blur(8px);
+}
+@keyframes toastIn { from { opacity: 0; transform: translateY(-10px) scale(0.9); } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(-10px) scale(0.9); } }
+.toast.success { background: rgba(82,196,26,0.9); }
+.toast.gold { background: rgba(255,215,0,0.9); color: #333; }
+
+/* 广告模拟 */
+.ad-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 999;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  position: relative;
-}
-.furniture-item:active { transform: scale(0.95); }
-.furniture-item.locked {
-  background: #F0EBE5;
-  cursor: not-allowed;
-}
-.furniture-item.locked .furniture-icon { opacity: 0.4; }
-.furniture-icon { font-size: 36px; }
-.furniture-name { font-size: 11px; color: #666; text-align: center; }
-.furniture-count {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  background: #E07B39;
-  color: #fff;
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 10px;
-}
-.furniture-check {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  font-size: 14px;
-}
-.furniture-item.placed .furniture-check { color: #52C41A; }
-
-/* ===== 商店页 ===== */
-.shop-page { background: #F5F0EB; }
-.shop-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-}
-.shop-item {
-  background: #fff;
-  border-radius: 14px;
-  padding: 14px;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-.shop-icon { font-size: 40px; flex-shrink: 0; }
-.shop-info { flex: 1; }
-.shop-name { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 2px; }
-.shop-desc { font-size: 12px; color: #999; margin-bottom: 6px; }
-.shop-price {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.price-tag {
-  background: #FFF8E6;
-  color: #D4881C;
-  border: 1px solid #FFE4B5;
-  border-radius: 12px;
-  padding: 2px 10px;
-  font-size: 13px;
-  font-weight: 600;
-}
-.price-tag.owned { background: #F6FFED; color: #52C41A; border-color: #B7EB8F; }
-.price-tag.ad { background: #FFF0F0; color: #FF6B6B; border-color: #FFCCC7; }
-.shop-btn {
-  background: linear-gradient(135deg, #E07B39, #D4881C);
-  color: #fff;
-  border: none;
-  border-radius: 20px;
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: transform 0.15s;
-}
-.shop-btn:active { transform: scale(0.95); }
-.shop-btn:disabled {
-  background: #DDD;
-  cursor: not-allowed;
-}
-
-/* ===== 家具放置弹窗 ===== */
-.place-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s;
 }
-.place-modal.show {
-  opacity: 1;
-  pointer-events: all;
+.ad-modal.show { opacity: 1; pointer-events: all; }
+.ad-content { text-align: center; color: #fff; }
+.ad-icon { font-size: 64px; margin-bottom: 12px; }
+.ad-label { font-size: 14px; opacity: 0.7; margin-bottom: 20px; }
+.ad-progress-wrap {
+  width: 240px; height: 4px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0 auto;
 }
-.place-modal-content {
-  background: #fff;
-  border-radius: 20px;
-  width: 90%;
-  max-width: 380px;
-  padding: 24px;
-  transform: scale(0.9);
-  transition: transform 0.3s;
+.ad-progress { height: 100%; background: var(--primary); width: 0; transition: width 0.1s linear; }
+.ad-skip { margin-top: 16px; font-size: 12px; color: rgba(255,255,255,0.4); }
+
+/* 新手引导 */
+.guide-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
 }
-.place-modal.show .place-modal-content { transform: scale(1); }
-.place-modal-title {
-  font-size: 17px;
+.guide-overlay.show { opacity: 1; pointer-events: all; }
+.guide-hand { font-size: 64px; margin-bottom: 16px; animation: handWave 1s infinite alternate; }
+@keyframes handWave { from { transform: rotate(-10deg) scale(1); } to { transform: rotate(10deg) scale(1.1); } }
+.guide-title { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 8px; text-align: center; }
+.guide-desc { font-size: 14px; color: rgba(255,255,255,0.65); text-align: center; line-height: 1.7; margin-bottom: 8px; }
+.guide-step { font-size: 12px; color: var(--primary); margin-bottom: 20px; }
+.guide-btn {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  padding: 12px 40px;
+  font-size: 15px;
   font-weight: 700;
-  color: #333;
-  text-align: center;
-  margin-bottom: 16px;
-}
-.room-select-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-bottom: 16px;
-}
-.room-select-item {
-  background: #F9F7F4;
-  border: 2px solid transparent;
-  border-radius: 12px;
-  padding: 14px 10px;
-  text-align: center;
   cursor: pointer;
-  transition: all 0.15s;
 }
-.room-select-item.selected {
-  border-color: #E07B39;
-  background: #FFF5EE;
+
+/* 每日奖励弹窗 */
+.reward-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
 }
-.room-select-icon { font-size: 28px; margin-bottom: 4px; }
-.room-select-name { font-size: 13px; color: #555; }
-.place-confirm-btn {
+.reward-modal.show { opacity: 1; pointer-events: all; }
+.reward-content {
+  background: var(--card);
+  border-radius: 24px;
+  padding: 32px 24px 24px;
+  text-align: center;
+  width: 300px;
+  transform: scale(0.8);
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+.reward-modal.show .reward-content { transform: scale(1); }
+.reward-icon { font-size: 72px; margin-bottom: 12px; }
+.reward-title { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+.reward-sub { font-size: 13px; color: var(--text-light); margin-bottom: 16px; }
+.reward-item {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #FFF8E6;
+  border: 1px solid #FFE4B5;
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 20px;
+}
+.reward-btn {
   width: 100%;
-  background: linear-gradient(135deg, #E07B39, #D4881C);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: #fff;
   border: none;
   border-radius: 24px;
   padding: 12px;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
 }
-.place-confirm-btn:active { transform: scale(0.98); }
 
-/* 广告按钮样式 */
-.ad-btn {
-  background: linear-gradient(135deg, #FF6B6B, #EE5A5A);
-  color: #fff;
-  border: none;
-  border-radius: 20px;
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-}
-.ad-btn::after {
-  content: '广告';
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  font-size: 8px;
-  background: rgba(255,255,255,0.3);
-  padding: 0 4px;
-  border-radius: 4px;
-}
+/* 动画 */
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.slide-up { animation: slideUp 0.4s ease; }
 
-/* Toast提示 */
-.toast {
+/* 粒子效果 */
+.particle {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.8);
-  background: rgba(0,0,0,0.8);
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-size: 14px;
-  z-index: 999;
-  opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s, transform 0.3s;
+  font-size: 16px;
+  z-index: 9998;
+  animation: particleFly 1s ease-out forwards;
 }
-.toast.show {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
+@keyframes particleFly {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-80px) scale(0.5); opacity: 0; }
 }
 
-/* ===== 新手引导 ===== */
-.guide-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.85);
-  z-index: 300;
+/* 房间空状态 */
+.room-empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s;
+  height: 100%;
+  color: var(--text-light);
+  gap: 8px;
 }
-.guide-overlay.show {
-  opacity: 1;
-  pointer-events: all;
-}
-.guide-icon { font-size: 64px; margin-bottom: 16px; }
-.guide-title {
-  color: #fff;
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: 8px;
-  text-align: center;
-}
-.guide-desc {
-  color: rgba(255,255,255,0.7);
-  font-size: 14px;
-  text-align: center;
-  margin-bottom: 24px;
-  line-height: 1.6;
-}
-.guide-step {
-  color: #E07B39;
-  font-size: 12px;
-  margin-bottom: 16px;
-}
-.guide-btn {
-  background: linear-gradient(135deg, #E07B39, #D4881C);
-  color: #fff;
-  border: none;
-  border-radius: 24px;
-  padding: 12px 36px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* ===== 我的页面 ===== */
-.my-page { background: #F5F0EB; }
-.my-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-}
-.stats-card {
-  background: linear-gradient(135deg, #E07B39, #D4881C);
-  border-radius: 20px;
-  padding: 20px;
-  color: #fff;
-  margin-bottom: 16px;
-}
-.stats-title { font-size: 13px; opacity: 0.8; margin-bottom: 16px; }
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  text-align: center;
-}
-.stat-num { font-size: 24px; font-weight: 700; }
-.stat-label { font-size: 11px; opacity: 0.75; margin-top: 2px; }
-.achievement-list {
-  background: #fff;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-}
-.achievement-title {
-  font-size: 14px;
-  color: #999;
-  margin-bottom: 12px;
-}
-.achievement-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid #F5F0EB;
-}
-.achievement-item:last-child { border-bottom: none; }
-.achievement-icon { font-size: 28px; }
-.achievement-info { flex: 1; }
-.achievement-name { font-size: 14px; font-weight: 600; color: #333; }
-.achievement-desc { font-size: 11px; color: #999; margin-top: 2px; }
-.achievement-status { font-size: 12px; color: #E07B39; font-weight: 600; }
-
-/* 广告预留区域 */
-.ad-placeholder {
-  background: repeating-linear-gradient(
-    45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px
-  );
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #999;
-  font-size: 12px;
-  min-height: 60px;
-}
+.room-empty-icon { font-size: 48px; opacity: 0.4; }
+.room-empty-text { font-size: 13px; }
 </style>
 </head>
 <body>
 <div id="app">
-  <!-- 顶部栏 -->
+
+  <!-- 顶部状态栏 -->
   <div class="topbar" id="topbar">
-    <div class="topbar-title">🏠 装个家</div>
-    <div class="topbar-info">
-      <div class="coin-display">
-        <span class="coin-icon">🪙</span>
-        <span id="coinCount">0</span>
+    <div class="topbar-left">
+      <span class="game-logo">🏠</span>
+      <span class="topbar-title">装个家</span>
+    </div>
+    <div class="topbar-right">
+      <div class="resource-item" id="coinDisplay" onclick="showTasksPanel()">
+        <span class="resource-icon">🪙</span>
+        <span class="resource-num" id="topbarCoins">0</span>
       </div>
+      <div class="resource-item" onclick="showTasksPanel()">
+        <span class="resource-icon">💎</span>
+        <span class="resource-num" id="topbarGems">0</span>
+      </div>
+      <button class="btn-icon" onclick="shareGame()">🔗</button>
     </div>
   </div>
 
-  <!-- 首页 -->
+  <!-- ===== 首页 ===== -->
   <div class="page home-page active" id="homePage">
-    <div class="home-content">
-      <!-- 房屋卡片 -->
-      <div class="house-card" id="houseCard">
-        <div class="house-preview">
-          <div class="room-floor" id="roomFloor">
-            <div class="room-label" id="roomLabel">客厅</div>
-            <!-- 家具会动态生成在这里 -->
-          </div>
-          <div class="progress-bar-wrap">
-            <div class="progress-label">
-              <span>装修进度</span>
-              <span id="progressText">0%</span>
-            </div>
-            <div class="progress-bar">
-              <div class="progress-fill" id="progressFill"></div>
-            </div>
-          </div>
-        </div>
-        <div class="house-footer">
-          <div>
-            <div class="house-name" id="houseName">我的小窝</div>
-            <div class="house-meta" id="houseMeta">已放置 0 件家具</div>
-          </div>
-          <button class="btn-assemble" id="btnStart">开始组装</button>
-        </div>
+    <div class="home-scroll" id="homeScroll">
+
+      <!-- Banner -->
+      <div class="home-banner" onclick="showSigninPanel()">
+        <div class="banner-bg">🏠</div>
+        <div class="banner-label">🎁 每日奖励</div>
+        <div class="banner-title">欢迎回来！</div>
+        <div class="banner-sub" id="bannerSub">点击领取今日签到奖励</div>
+        <button class="banner-btn" id="bannerBtn">立即领取 →</button>
       </div>
 
-      <!-- 快捷入口 -->
-      <div class="quick-actions">
-        <button class="quick-btn" onclick="showStore()">
+      <!-- 房间列表 -->
+      <div class="section-title">🏠 我的家<span class="more" id="totalProgress">装修 0%</span></div>
+      <div class="rooms-scroll" id="roomsScroll"></div>
+
+      <!-- 快捷功能 -->
+      <div class="section-title">🎮 功能入口</div>
+      <div class="quick-grid">
+        <button class="quick-item" onclick="startAssemble()" style="position:relative;">
+          <span class="quick-icon">🔨</span>
+          <span class="quick-text">组装家具</span>
+        </button>
+        <button class="quick-item" onclick="showSigninPanel()">
+          <span class="quick-icon">📅</span>
+          <span class="quick-text">每日签到</span>
+        </button>
+        <button class="quick-item" onclick="showTasksPanel()">
+          <span class="quick-icon">📋</span>
+          <span class="quick-text">每日任务</span>
+          <span class="quick-badge" id="taskBadge" style="display:none;">0</span>
+        </button>
+        <button class="quick-item" onclick="showStorePanel()">
           <span class="quick-icon">📦</span>
-          <span class="quick-text">仓库</span>
-        </button>
-        <button class="quick-btn" onclick="showShop()">
-          <span class="quick-icon">🛒</span>
-          <span class="quick-text">商店</span>
-        </button>
-        <button class="quick-btn" onclick="showAd()">
-          <span class="quick-icon">📺</span>
-          <span class="quick-text">看广告</span>
-        </button>
-        <button class="quick-btn" onclick="showMy()">
-          <span class="quick-icon">👤</span>
-          <span class="quick-text">我的</span>
+          <span class="quick-text">家具仓库</span>
         </button>
       </div>
 
-      <!-- 总览 -->
-      <div class="overview-card">
-        <div class="overview-title">游戏数据</div>
-        <div class="overview-grid">
-          <div class="overview-item">
-            <div class="overview-num" id="statFurniture">0</div>
-            <div class="overview-name">已收集家具</div>
-          </div>
-          <div class="overview-item">
-            <div class="overview-num" id="statPlaced">0</div>
-            <div class="overview-name">已放置家具</div>
-          </div>
-          <div class="overview-item">
-            <div class="overview-num" id="statAssemble">0</div>
-            <div class="overview-name">组装次数</div>
-          </div>
-        </div>
+      <!-- 每日任务 -->
+      <div class="section-title">🎯 每日任务<span class="more" onclick="showTasksPanel()">全部 →</span></div>
+      <div class="task-list" id="taskListHome"></div>
+
+      <!-- 排行榜入口 -->
+      <div class="section-title">🏆 装修排行榜</div>
+      <div style="padding: 0 16px;">
+        <div class="my-card" id="rankCard"></div>
       </div>
+
+      <!-- 分享入口 -->
+      <div style="padding: 0 16px 20px;">
+        <button class="share-btn" onclick="shareGame()">
+          <span>📤</span> 分享到微信，邀请好友一起来装修
+        </button>
+      </div>
+
     </div>
   </div>
 
-  <!-- 组装页 -->
+  <!-- ===== 组装页 ===== -->
   <div class="page assemble-page" id="assemblePage">
     <div class="assemble-header">
-      <span class="assemble-title" id="assembleFurnitureName">组装中...</span>
-      <span class="timer-display" id="timerDisplay">⏱ 01:30</span>
-      <button class="assemble-close" onclick="exitAssemble()">✕</button>
-    </div>
-    <div class="assemble-area">
-      <div class="blueprint-zone">
-        <div class="blueprint-label">📐 目标图纸 — 照着拼</div>
-        <div class="blueprint-canvas-wrap" id="blueprintCanvas"></div>
+      <button class="assemble-back" onclick="exitAssemble()">✕</button>
+      <div class="assemble-info">
+        <div class="assemble-name" id="assembleFurnitureName">组装中...</div>
+        <div class="assemble-step" id="assembleStep">0 / 0 零件</div>
       </div>
-      <div class="parts-zone">
-        <div class="parts-label">🧩 零件 — 拖拽到正确位置</div>
-        <div class="parts-grid" id="partsGrid"></div>
+      <div class="assemble-timer" id="timerDisplay">⏱ 00:00</div>
+    </div>
+    <div class="assemble-body">
+      <div class="blueprint-section">
+        <div class="blueprint-header">
+          <span class="blueprint-label">📐 目标图纸 — 照着拼装</span>
+          <span class="blueprint-hint" onclick="useHint()">💡 提示</span>
+        </div>
+        <div class="blueprint-canvas" id="blueprintCanvas"></div>
       </div>
-    </div>
-    <div class="complete-overlay" id="completeOverlay">
-      <div class="complete-icon">🎉</div>
-      <div class="complete-text">组装完成！</div>
-      <div class="complete-sub" id="completeReward">获得 +50 金币</div>
-      <div style="margin-top:20px;display:flex;gap:12px;">
-        <button class="fail-btn fail-btn-secondary" onclick="showAdDouble()">📺 双倍奖励</button>
-        <button class="fail-btn fail-btn-primary" onclick="finishAssemble()">收下家具</button>
-      </div>
-    </div>
-    <div class="fail-overlay" id="failOverlay">
-      <div class="fail-icon">⏰</div>
-      <div class="fail-text">时间到！</div>
-      <div class="fail-btns">
-        <button class="fail-btn fail-btn-secondary" onclick="exitAssemble()">算了</button>
-        <button class="fail-btn fail-btn-primary" onclick="showAd()">📺 看广告复活</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 仓库页 -->
-  <div class="page store-page" id="storePage">
-    <div style="padding:16px 16px 8px;flex-shrink:0;">
-      <button onclick="goHome()" style="background:none;border:none;font-size:20px;cursor:pointer;">← 返回</button>
-    </div>
-    <div class="store-content">
-      <div class="store-section">
-        <div class="store-section-title">🛋️ 已收集的家具</div>
-        <div class="furniture-grid" id="ownedFurnitureGrid"></div>
-      </div>
-      <div class="store-section">
-        <div class="store-section-title">🔒 尚未解锁</div>
-        <div class="furniture-grid" id="lockedFurnitureGrid"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 商店页 -->
-  <div class="page shop-page" id="shopPage">
-    <div style="padding:16px 16px 8px;flex-shrink:0;">
-      <button onclick="goHome()" style="background:none;border:none;font-size:20px;cursor:pointer;">← 返回</button>
-    </div>
-    <div class="shop-content">
-      <div id="shopList"></div>
-    </div>
-  </div>
-
-  <!-- 我的页面 -->
-  <div class="page my-page" id="myPage">
-    <div style="padding:16px 16px 8px;flex-shrink:0;">
-      <button onclick="goHome()" style="background:none;border:none;font-size:20px;cursor:pointer;">← 返回</button>
-    </div>
-    <div class="my-content">
-      <div class="stats-card">
-        <div class="stats-title">📊 我的成就</div>
-        <div class="stats-grid">
-          <div>
-            <div class="stat-num" id="myFurniture">0</div>
-            <div class="stat-label">收集家具</div>
-          </div>
-          <div>
-            <div class="stat-num" id="myPlaced">0</div>
-            <div class="stat-label">已放置</div>
-          </div>
-          <div>
-            <div class="stat-num" id="myCoins">0</div>
-            <div class="stat-label">金币余额</div>
-          </div>
+      <div class="parts-section">
+        <div class="parts-header">
+          <span class="parts-label">🧩 零件列表 — 拖拽到正确位置</span>
+          <span class="parts-progress" id="partsProgress">0 / 0</span>
+        </div>
+        <div class="parts-grid-wrap">
+          <div class="parts-grid" id="partsGrid"></div>
         </div>
       </div>
-      <div class="achievement-list">
-        <div class="achievement-title">🏆 成就</div>
-        <div id="achievementList"></div>
+    </div>
+    <!-- 完成遮罩 -->
+    <div class="assemble-overlay" id="completeOverlay">
+      <div class="overlay-icon">🎉</div>
+      <div class="overlay-title">组装完成！</div>
+      <div class="overlay-sub" id="completeSub">太棒了！家具已入库</div>
+      <div class="overlay-reward" id="completeReward">🪙 +50</div>
+      <div class="overlay-btns">
+        <button class="overlay-btn overlay-btn-secondary" onclick="showAdForDouble()">📺 双倍奖励</button>
+        <button class="overlay-btn overlay-btn-primary" onclick="collectFurniture()">收下家具</button>
+      </div>
+    </div>
+    <!-- 失败遮罩 -->
+    <div class="assemble-overlay" id="failOverlay">
+      <div class="overlay-icon">⏰</div>
+      <div class="overlay-title">时间到！</div>
+      <div class="overlay-sub">差一点就完成了</div>
+      <div class="overlay-btns">
+        <button class="overlay-btn overlay-btn-secondary" onclick="exitAssemble()">退出</button>
+        <button class="overlay-btn overlay-btn-ad" onclick="showAdForRetry()">📺 看广告复活</button>
       </div>
     </div>
   </div>
 
-  <!-- 家具放置弹窗 -->
-  <div class="place-modal" id="placeModal">
-    <div class="place-modal-content">
-      <div class="place-modal-title" id="placeFurnitureName">放置家具</div>
-      <div class="room-select-grid" id="roomSelectGrid"></div>
-      <button class="place-confirm-btn" onclick="confirmPlace()">放入房间</button>
+  <!-- ===== 我的页面 ===== -->
+  <div class="page my-page" id="myPage">
+    <div class="my-header">
+      <div class="my-user">
+        <div class="my-avatar">😊</div>
+        <div>
+          <div class="my-name" id="myPlayerName">装修达人</div>
+          <div class="my-id">ID: <span id="myPlayerId">888888</span></div>
+        </div>
+      </div>
+      <div class="my-stats-row">
+        <div class="my-stat"><div class="my-stat-num" id="myTotalFurniture">0</div><div class="my-stat-label">收集家具</div></div>
+        <div class="my-stat"><div class="my-stat-num" id="myTotalPlaced">0</div><div class="my-stat-label">已摆放</div></div>
+        <div class="my-stat"><div class="my-stat-num" id="myTotalCoins">0</div><div class="my-stat-label">累计金币</div></div>
+      </div>
+    </div>
+    <div class="my-body">
+      <div class="my-card">
+        <div class="my-card-title">🏆 成就</div>
+        <div class="achievement-grid" id="achievementGrid"></div>
+      </div>
+      <div class="my-card">
+        <div class="my-card-title">📊 本周排行</div>
+        <div class="rank-list" id="myRankList"></div>
+      </div>
+      <button class="share-btn" onclick="shareGame()">
+        <span>📤</span> 分享我的家，邀请好友
+      </button>
     </div>
   </div>
 
-  <!-- Toast -->
-  <div class="toast" id="toast"></div>
+  <!-- ===== 房间详情页 ===== -->
+  <div class="page room-detail-page" id="roomDetailPage">
+    <div class="room-detail-header">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <button class="btn-icon" onclick="goHome()" style="background:rgba(255,255,255,0.2);color:#fff;">←</button>
+        <span class="topbar-title" style="color:#fff;">房间详情</span>
+      </div>
+      <div class="room-detail-title" id="roomDetailName">客厅</div>
+      <div class="room-detail-meta" id="roomDetailMeta">已摆放 0 / 6 件家具</div>
+    </div>
+    <div class="room-detail-body">
+      <div class="room-visual" id="roomVisual">
+        <div class="room-visual-grid"></div>
+        <div class="room-visual-items" id="roomVisualItems"></div>
+      </div>
+      <div class="room-placed-list">
+        <div class="room-placed-title">已摆放的家具</div>
+        <div class="room-placed-items" id="roomPlacedItems"></div>
+        <div class="room-empty" id="roomEmpty" style="display:none;">还没有家具，去组装吧！</div>
+      </div>
+      <button class="room-cta" onclick="startAssemble()" style="margin-top:16px;">+ 组装新家具</button>
+    </div>
+  </div>
+
+  <!-- ===== 底部导航 ===== -->
+  <div class="bottom-nav" id="bottomNav">
+    <button class="nav-item active" onclick="goHome()">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">首页</span>
+    </button>
+    <button class="nav-item" onclick="showStorePanel()">
+      <span class="nav-icon">📦</span>
+      <span class="nav-label">仓库</span>
+    </button>
+    <button class="nav-item" onclick="startAssemble()">
+      <span class="nav-icon">🔨</span>
+      <span class="nav-label">组装</span>
+    </button>
+    <button class="nav-item" onclick="showMy()">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">我的</span>
+    </button>
+  </div>
+
+  <!-- ===== 弹窗面板 ===== -->
+  <div class="panel-overlay" id="panelOverlay" onclick="closeAllPanels()"></div>
+  <div class="panel" id="signinPanel">
+    <div class="signin-content">
+      <div class="signin-title">📅 每日签到</div>
+      <div class="signin-sub" id="signinSub">连续签到 0 天</div>
+      <div class="signin-days" id="signinDays"></div>
+      <button class="signin-claim-btn" id="signinBtn" onclick="doSignin()">立即签到</button>
+    </div>
+  </div>
+  <div class="panel" id="tasksPanel" style="max-height:80vh;">
+    <div class="tasks-content">
+      <div class="tasks-title">🎯 每日任务</div>
+      <div class="task-list-panel" id="taskList"></div>
+    </div>
+  </div>
+  <div class="panel" id="storePanel" style="max-height:85vh;">
+    <div class="store-content">
+      <div class="store-tabs">
+        <button class="store-tab active" onclick="switchStoreTab('owned')">已收集</button>
+        <button class="store-tab" onclick="switchStoreTab('all')">全部家具</button>
+      </div>
+      <div class="furniture-showcase" id="furnitureShowcase"></div>
+    </div>
+  </div>
+
+  <!-- Toast容器 -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- 广告模拟 -->
+  <div class="ad-modal" id="adModal">
+    <div class="ad-content">
+      <div class="ad-icon">📺</div>
+      <div class="ad-label" id="adLabel">广告播放中...</div>
+      <div class="ad-progress-wrap"><div class="ad-progress" id="adProgress"></div></div>
+      <div class="ad-skip" id="adSkip">剩余 5 秒</div>
+    </div>
+  </div>
+
+  <!-- 奖励弹窗 -->
+  <div class="reward-modal" id="rewardModal">
+    <div class="reward-content">
+      <div class="reward-icon" id="rewardIcon">🎁</div>
+      <div class="reward-title" id="rewardTitle">签到成功！</div>
+      <div class="reward-sub" id="rewardSub">明天继续签到有更多奖励</div>
+      <div class="reward-item" id="rewardItem">🪙 +100</div>
+      <button class="reward-btn" onclick="closeReward()">收下</button>
+    </div>
+  </div>
 
   <!-- 新手引导 -->
   <div class="guide-overlay" id="guideOverlay">
-    <div class="guide-icon" id="guideIcon">🏠</div>
+    <div class="guide-hand" id="guideHand">👆</div>
     <div class="guide-title" id="guideTitle">欢迎来到「装个家」</div>
     <div class="guide-desc" id="guideDesc">用碎片时间，组装家具<br>把毛坯房变成温馨的家</div>
-    <div class="guide-step" id="guideStep">第 1/3 步</div>
-    <button class="guide-btn" id="guideBtn" onclick="nextGuide()">开始</button>
+    <div class="guide-step" id="guideStep">第 1/4 步</div>
+    <button class="guide-btn" id="guideBtn" onclick="nextGuide()">知道了</button>
   </div>
 
-  <!-- 底部导航 -->
-  <div class="bottom-nav" id="bottomNav">
-    <div class="nav-item active" onclick="goHome()">
-      <span class="nav-icon">🏠</span>
-      <span class="nav-label">首页</span>
-    </div>
-    <div class="nav-item" onclick="showStore()">
-      <span class="nav-icon">📦</span>
-      <span class="nav-label">仓库</span>
-    </div>
-    <div class="nav-item" onclick="showShop()">
-      <span class="nav-icon">🛒</span>
-      <span class="nav-label">商店</span>
-    </div>
-    <div class="nav-item" onclick="showMy()">
-      <span class="nav-icon">👤</span>
-      <span class="nav-label">我的</span>
-    </div>
-  </div>
 </div>
 
 <script>
-// ===== 游戏数据 =====
+// ===== 数据定义 =====
 const FURNITURE_DATA = [
-  { id: 'chair',      name: '椅子',     icon: '🪑', parts: 3, time: 30,  reward: 30,  color: '#E07B39', room: 'living',   difficulty: 1 },
-  { id: 'table',      name: '茶几',     icon: '🪵', parts: 4, time: 40,  reward: 40,  color: '#8B6914', room: 'living',   difficulty: 1 },
-  { id: 'lamp',       name: '台灯',     icon: '💡', parts: 3, time: 25,  reward: 25,  color: '#F4D03F', room: 'bedroom',  difficulty: 1 },
-  { id: 'sofa',       name: '沙发',     icon: '🛋️', parts: 5, time: 50,  reward: 60,  color: '#A0522D', room: 'living',   difficulty: 2 },
-  { id: 'bed',        name: '床',       icon: '🛏️', parts: 6, time: 60,  reward: 70,  color: '#CD853F', room: 'bedroom',  difficulty: 2 },
-  { id: 'wardrobe',   name: '衣柜',     icon: '🗄️', parts: 7, time: 70,  reward: 80,  color: '#DEB887', room: 'bedroom',  difficulty: 2 },
-  { id: 'desk',       name: '书桌',     icon: '📔', parts: 5, time: 45,  reward: 50,  color: '#BC8F8F', room: 'study',    difficulty: 2 },
-  { id: 'bookshelf',  name: '书架',     icon: '📚', parts: 8, time: 80,  reward: 90,  color: '#8B7355', room: 'study',    difficulty: 3 },
-  { id: 'dresser',    name: '梳妆台',   icon: '💄', parts: 6, time: 55,  reward: 65,  color: '#DB7093', room: 'bedroom',  difficulty: 2 },
-  { id: 'tv',         name: '电视柜',   icon: '📺', parts: 4, time: 35,  reward: 35,  color: '#2C3E50', room: 'living',   difficulty: 1 },
-  { id: 'fridge',     name: '冰箱',     icon: '🧊', parts: 5, time: 45,  reward: 45,  color: '#5DADE2', room: 'kitchen',  difficulty: 2 },
-  { id: 'stove',      name: '灶台',     icon: '🍳', parts: 4, time: 40,  reward: 40,  color: '#E74C3C', room: 'kitchen',  difficulty: 1 },
+  { id:'chair',     name:'椅子',      icon:'🪑', parts:3, time:30,  reward:30,  color:'#E07B39', room:'living',   diff:1, desc:'最基础的家具' },
+  { id:'table',     name:'茶几',      icon:'🪵', parts:4, time:40,  reward:40,  color:'#8B6914', room:'living',   diff:1, desc:'4步组装' },
+  { id:'lamp',      name:'台灯',      icon:'💡', parts:3, time:25,  reward:25,  color:'#F4D03F', room:'bedroom',  diff:1, desc:'快速完成' },
+  { id:'sofa',     name:'沙发',      icon:'🛋️', parts:5, time:50,  reward:60,  color:'#A0522D', room:'living',   diff:2, desc:'5步组装' },
+  { id:'bed',       name:'床',        icon:'🛏️', parts:6, time:60,  reward:70,  color:'#CD853F', room:'bedroom',  diff:2, desc:'6步组装' },
+  { id:'wardrobe',  name:'衣柜',      icon:'🗄️', parts:7, time:70,  reward:80,  color:'#DEB887', room:'bedroom',  diff:2, desc:'7步组装' },
+  { id:'desk',      name:'书桌',      icon:'📔', parts:5, time:45,  reward:50,  color:'#BC8F8F', room:'study',    diff:2, desc:'5步组装' },
+  { id:'bookshelf', name:'书架',      icon:'📚', parts:8, time:80,  reward:90,  color:'#8B7355', room:'study',    diff:3, desc:'8步组装' },
+  { id:'dresser',   name:'梳妆台',    icon:'💄', parts:6, time:55,  reward:65,  color:'#DB7093', room:'bedroom',  diff:2, desc:'6步组装' },
+  { id:'tv',        name:'电视柜',    icon:'📺', parts:4, time:35,  reward:35,  color:'#2C3E50', room:'living',   diff:1, desc:'4步组装' },
+  { id:'fridge',    name:'冰箱',      icon:'🧊', parts:5, time:45,  reward:45,  color:'#5DADE2', room:'kitchen',  diff:2, desc:'5步组装' },
+  { id:'stove',     name:'灶台',      icon:'🍳', parts:4, time:40,  reward:40,  color:'#E74C3C', room:'kitchen',  diff:1, desc:'4步组装' },
+  { id:'wc',        name:'马桶',      icon:'🚽', parts:4, time:35,  reward:35,  color:'#85C1E9', room:'bathroom', diff:1, desc:'4步组装' },
+  { id:'washbasin', name:'洗手台',    icon:'🚰', parts:5, time:45,  reward:45,  color:'#AED6F1', room:'bathroom', diff:2, desc:'5步组装' },
+  { id:'shower',    name:'淋浴房',    icon:'🚿', parts:6, time:55,  reward:55,  color:'#5DADE2', room:'bathroom', diff:2, desc:'6步组装' },
+  { id:'plant',     name:'盆栽',      icon:'🌿', parts:3, time:20,  reward:20,  color:'#52C41A', room:'living',   diff:1, desc:'装饰品' },
+  { id:'rug',       name:'地毯',      icon:'🟫', parts:4, time:25,  reward:25,  color:'#CD853F', room:'living',   diff:1, desc:'装饰品' },
+  { id:'clock',     name:'挂钟',      icon:'🕐', parts:3, time:20,  reward:20,  color:'#F39C12', room:'living',   diff:1, desc:'装饰品' },
+  { id:'tvwall',    name:'电视墙',    icon:'🖼️', parts:6, time:50,  reward:60,  color:'#7F8C8D', room:'living',   diff:2, desc:'大件家具' },
+  { id:'cabinet',   name:'餐边柜',    icon:'🍽️', parts:5, time:45,  reward:50,  color:'#8B6914', room:'kitchen',  diff:2, desc:'5步组装' },
+  { id:'nightstand',name:'床头柜',    icon:'🗄️', parts:4, time:35,  reward:35,  color:'#DEB887', room:'bedroom',  diff:1, desc:'4步组装' },
+  { id:'shoe_rack', name:'鞋柜',      icon:'👟', parts:5, time:40,  reward:40,  color:'#A0522D', room:'living',   diff:1, desc:'5步组装' },
 ];
 
 const ROOMS = [
-  { id: 'living',  name: '客厅',    icon: '🛋️', capacity: 6 },
-  { id: 'bedroom', name: '卧室',    icon: '🛏️', capacity: 5 },
-  { id: 'kitchen', name: '厨房',    icon: '🍳', capacity: 4 },
-  { id: 'study',   name: '书房',    icon: '📚', capacity: 4 },
-  { id: 'bathroom',name: '卫生间',  icon: '🚿', capacity: 3 },
+  { id:'living',   name:'客厅',    icon:'🛋️', capacity:8, bg:'#F0EBE5' },
+  { id:'bedroom',  name:'卧室',    icon:'🛏️', capacity:6, bg:'#E8E3DC' },
+  { id:'kitchen',  name:'厨房',    icon:'🍳', capacity:5, bg:'#E5E0DB' },
+  { id:'study',    name:'书房',    icon:'📚', capacity:5, bg:'#E8E3DC' },
+  { id:'bathroom', name:'卫生间',  icon:'🚿', capacity:4, bg:'#E0DBD6' },
+];
+
+const SIGNIN_REWARDS = [30, 40, 50, 60, 80, 100, 150]; // 每天奖励
+const TASKS = [
+  { id:'assemble1',  name:'组装一件家具',  icon:'🔨', desc:'完成一次家具组装',   reward:20,  type:'once' },
+  { id:'assemble3',  name:'组装三件家具',  icon:'🔩', desc:'今日完成3次组装',    reward:60,  type:'daily', target:3 },
+  { id:'signin',     name:'每日签到',       icon:'📅', desc:'签到领取奖励',        reward:30,  type:'daily' },
+  { id:'place3',     name:'摆放家具',       icon:'🏠', desc:'在房间里摆放3件家具', reward:50,  type:'once',  target:3 },
+  { id:'watchad',    name:'观看广告',       icon:'📺', desc:'观看一次广告',         reward:10,  type:'daily' },
+  { id:'login',      name:'每日登录',       icon:'🏠', desc:'打开游戏',             reward:10,  type:'daily' },
+  { id:'assemble5',  name:'组装五件家具',   icon:'⚙️', desc:'今日完成5次组装',    reward:100, type:'once',  target:5 },
 ];
 
 const ACHIEVEMENTS = [
-  { id: 'first',   name: '初来乍到',  desc: '收集第一件家具',         icon: '🌱', condition: s => s.ownedFurniture.length >= 1 },
-  { id: 'five',    name: '小有成就',  desc: '收集5件家具',             icon: '🌿', condition: s => s.ownedFurniture.length >= 5 },
-  { id: 'ten',     name: '家具达人',  desc: '收集10件家具',            icon: '🌳', condition: s => s.ownedFurniture.length >= 10 },
-  { id: 'place5',  name: '初具规模',  desc: '放置5件家具到房间',       icon: '🏠', condition: s => countPlaced(s) >= 5 },
-  { id: 'place10', name: '温馨小窝',  desc: '放置10件家具到房间',      icon: '🏡', condition: s => countPlaced(s) >= 10 },
-  { id: 'rich',    name: '存款上万',  desc: '累计获得10000金币',       icon: '💰', condition: s => s.totalCoins >= 10000 },
+  { id:'first',      name:'初来乍到',    icon:'🌱', desc:'收集第一件家具',         cond:s=>s.ownedFurniture.length>=1 },
+  { id:'five',       name:'小有成就',    icon:'🌿', desc:'收集5件家具',             cond:s=>s.ownedFurniture.length>=5 },
+  { id:'ten',        name:'家具达人',    icon:'🌳', desc:'收集10件家具',            cond:s=>s.ownedFurniture.length>=10 },
+  { id:'fifteen',    name:'收藏家',      icon:'🏺', desc:'收集15件家具',            cond:s=>s.ownedFurniture.length>=15 },
+  { id:'place3',     name:'初具规模',    icon:'🏠', desc:'摆放3件家具到房间',       cond:s=>countPlaced(s)>=3 },
+  { id:'place10',    name:'温馨小窝',    icon:'🏡', desc:'摆放10件家具到房间',      cond:s=>countPlaced(s)>=10 },
+  { id:'place20',    name:'装修大师',    icon:'🏛️', desc:'摆放20件家具到房间',      cond:s=>countPlaced(s)>=20 },
+  { id:'rich',       name:'存款上万',    icon:'💰', desc:'累计获得10000金币',       cond:s=>s.totalCoins>=10000 },
+  { id:'signin7',    name:'连续7天',     icon:'📆', desc:'连续签到7天',             cond:s=>s.signinStreak>=7 },
+  { id:'allsignin30',name:'满月',        icon:'🌕', desc:'累计签到30天',            cond:s=>s.totalSignins>=30 },
+];
+
+const GUIDE_STEPS = [
+  { hand:'👆', title:'欢迎来到「装个家」', desc:'用碎片时间，组装家具\n把毛坯房变成温馨的家', btn:'了解一下' },
+  { hand:'👆', title:'组装家具很简单', desc:'从零件库拖拽到正确位置\n照着图纸拼出完整家具', btn:'我学会了' },
+  { hand:'📺', title:'看广告能加速', desc:'想要双倍金币？想要复活？\n看个广告就能解决', btn:'太棒了' },
+  { hand:'🏆', title:'签到和任务有奖励', desc:'每日签到、完成任务\n获得金币和更多家具', btn:'开始装修！' },
 ];
 
 // ===== 游戏状态 =====
-let gameState = {
-  coins: 100,          // 当前金币
-  totalCoins: 0,       // 累计获得金币
-  ownedFurniture: [],  // 拥有的家具ID列表
-  placedFurniture: {}, // { roomId: [furnitureId, ...] }
-  stats: { assembled: 0, placed: 0 },
-  unlockedFurniture: ['chair','table','lamp','tv','stove'], // 默认解锁
-  adsWatched: 0,
+let S = {
+  coins: 100,
+  gems: 0,
+  totalCoins: 0,
+  ownedFurniture: [],
+  placedFurniture: {},
+  unlockedFurniture: ['chair','table','lamp','tv','stove','wc','plant','rug'],
+  stats: { assembled:0, placed:0, adsWatched:0 },
+  signinDays: 0,
+  signinStreak: 0,
+  lastSignin: null,
+  totalSignins: 0,
   guideStep: 0,
-  lastAdTime: 0,
+  taskProgress: {},
+  dailyTasks: {},
+  weekRank: [],
+  dailyTasksDate: null,
 };
 
-// ===== 工具函数 =====
 function countPlaced(s) {
   return Object.values(s.placedFurniture).flat().length;
 }
 
-function saveState() {
-  localStorage.setItem('zhuanggejia_v1', JSON.stringify(gameState));
+function countOwned(s) {
+  return s.ownedFurniture.length;
 }
 
-function loadState() {
-  const saved = localStorage.getItem('zhuanggejia_v1');
-  if (saved) {
-    try {
-      gameState = { ...gameState, ...JSON.parse(saved) };
-    } catch(e) {}
+// ===== 本地存储 =====
+function save() {
+  localStorage.setItem('zhuanggejia_v2', JSON.stringify(S));
+}
+function load() {
+  const d = localStorage.getItem('zhuanggejia_v2');
+  if (d) { try { S = { ...S, ...JSON.parse(d) }; } catch(e){} }
+  // 重置每日任务
+  const today = new Date().toDateString();
+  if (S.dailyTasksDate !== today) {
+    S.dailyTasks = {};
+    S.dailyTasksDate = today;
+    // 每日任务进度重置
+    ['assemble3','signin','watchad','login'].forEach(id => {
+      if (!S.taskProgress[id]) S.taskProgress[id] = 0;
+    });
+    save();
   }
 }
 
-function showToast(msg, duration = 1500) {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), duration);
+// ===== Toast =====
+function toast(msg, type='default') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast' + (type !== 'default' ? ' ' + type : '');
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 1600);
 }
 
-function updateCoinDisplay() {
-  document.getElementById('coinCount').textContent = gameState.coins;
+// 粒子效果
+function particle(x, y, emoji) {
+  for (let i = 0; i < 3; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emoji;
+    p.style.left = (x + Math.random()*30 - 15) + 'px';
+    p.style.top = (y + Math.random()*20 - 10) + 'px';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
 }
 
 // ===== 页面导航 =====
+const PAGES = ['homePage','assemblePage','myPage','roomDetailPage'];
 let currentPage = 'home';
-const PAGES = ['homePage','storePage','shopPage','myPage','assemblePage'];
 
 function showPage(pageId) {
-  PAGES.forEach(id => {
-    document.getElementById(id).classList.remove('active');
-  });
-  const bottomNav = document.getElementById('bottomNav');
-  const topbar = document.getElementById('topbar');
+  PAGES.forEach(id => document.getElementById(id).classList.remove('active'));
+  const page = document.getElementById(pageId);
+  if (page) page.classList.add('active');
+  currentPage = pageId;
 
+  const topbar = document.getElementById('topbar');
+  const bottomNav = document.getElementById('bottomNav');
   if (pageId === 'assemblePage') {
     topbar.style.display = 'none';
     bottomNav.style.display = 'none';
@@ -1110,483 +1553,443 @@ function showPage(pageId) {
     bottomNav.style.display = 'flex';
   }
 
-  document.getElementById(pageId).classList.add('active');
-  currentPage = pageId;
-
-  // 更新导航高亮
+  // 更新导航
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   if (pageId === 'homePage') document.querySelectorAll('.nav-item')[0].classList.add('active');
-  else if (pageId === 'storePage') document.querySelectorAll('.nav-item')[1].classList.add('active');
-  else if (pageId === 'shopPage') document.querySelectorAll('.nav-item')[2].classList.add('active');
   else if (pageId === 'myPage') document.querySelectorAll('.nav-item')[3].classList.add('active');
 
-  // 刷新数据
   if (pageId === 'homePage') renderHome();
-  else if (pageId === 'storePage') renderStore();
-  else if (pageId === 'shopPage') renderShop();
   else if (pageId === 'myPage') renderMy();
 }
 
-function goHome() { showPage('homePage'); }
-function showStore() { showPage('storePage'); }
-function showShop() { showPage('shopPage'); }
-function showMy() { showPage('myPage'); }
+function goHome() {
+  showPage('homePage');
+  closeAllPanels();
+}
 
-// ===== 首页渲染 =====
+// ===== 渲染首页 =====
 function renderHome() {
-  updateCoinDisplay();
-  const placed = countPlaced(gameState);
-  const maxCapacity = ROOMS.reduce((sum, r) => sum + r.capacity, 0);
-  const pct = maxCapacity > 0 ? Math.round(placed / maxCapacity * 100) : 0;
+  document.getElementById('topbarCoins').textContent = S.coins;
+  document.getElementById('topbarGems').textContent = S.gems;
 
-  document.getElementById('progressText').textContent = pct + '%';
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('houseMeta').textContent = `已放置 ${placed} 件家具`;
+  // Banner状态
+  const today = new Date().toDateString();
+  const signed = S.lastSignin === today;
+  const bannerSub = document.getElementById('bannerSub');
+  const bannerBtn = document.getElementById('bannerBtn');
+  if (signed) {
+    bannerSub.textContent = `已连续签到 ${S.signinStreak} 天！明天再来`;
+    bannerBtn.textContent = '明日再来 →';
+    bannerBtn.style.background = 'rgba(255,255,255,0.4)';
+  } else {
+    bannerSub.textContent = `连续签到 ${S.signinStreak} 天，明天继续有奖励`;
+    bannerBtn.textContent = '立即签到 →';
+  }
 
-  // 更新统计
-  document.getElementById('statFurniture').textContent = gameState.ownedFurniture.length;
-  document.getElementById('statPlaced').textContent = placed;
-  document.getElementById('statAssemble').textContent = gameState.stats.assembled;
+  // 装修进度
+  const placed = countPlaced(S);
+  const totalCap = ROOMS.reduce((a,r)=>a+r.capacity,0);
+  const pct = Math.round(placed/totalCap*100);
+  document.getElementById('totalProgress').textContent = `装修 ${pct}%`;
 
-  // 渲染房间里的家具
-  renderRoomFurniture();
+  // 房间列表
+  renderRooms();
+
+  // 每日任务
+  renderTaskListHome();
+
+  // 排行榜
+  renderRankCard();
+
+  // 任务徽章
+  const pending = TASKS.filter(t => !S.dailyTasks[t.id]).length;
+  const badge = document.getElementById('taskBadge');
+  if (pending > 0) { badge.style.display = ''; badge.textContent = pending; }
+  else badge.style.display = 'none';
 }
 
-function renderRoomFurniture() {
-  const floor = document.getElementById('roomFloor');
-  // 清除旧家具
-  floor.querySelectorAll('.placed-furniture').forEach(el => el.remove());
-
-  // 收集所有已放置的家具
-  const allPlaced = [];
+function renderRooms() {
+  const container = document.getElementById('roomsScroll');
+  container.innerHTML = '';
   ROOMS.forEach(room => {
-    const ids = gameState.placedFurniture[room.id] || [];
-    ids.forEach((fid, i) => {
-      const fd = FURNITURE_DATA.find(f => f.id === fid);
-      if (fd) {
-        allPlaced.push({ ...fd, roomId: room.id, index: i });
-      }
-    });
-  });
+    const placed = (S.placedFurniture[room.id]||[]).length;
+    const pct = Math.round(placed/room.capacity*100);
+    const ids = S.placedFurniture[room.id]||[];
 
-  // 在房间地板上显示家具图标
-  const roomLabel = document.getElementById('roomLabel');
-  roomLabel.textContent = allPlaced.length > 0 ? '客厅' : '客厅（空）';
+    const card = document.createElement('div');
+    card.className = 'room-card';
+    card.onclick = () => showRoomDetail(room.id);
 
-  allPlaced.slice(0, 8).forEach((item, i) => {
-    const el = document.createElement('div');
-    el.className = 'placed-furniture';
-    el.style.cssText = `
-      position: absolute;
-      font-size: ${item.room === 'living' ? '28px' : '24px'};
-      left: ${10 + (i % 4) * 22}%;
-      top: ${20 + Math.floor(i / 4) * 35}%;
-      opacity: 0.85;
-      pointer-events: none;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.15);
-    `;
-    el.textContent = item.icon;
-    floor.appendChild(el);
-  });
-}
+    const furnitureIcons = ids.map(fid => {
+      const f = FURNITURE_DATA.find(x=>x.id===fid);
+      return f ? `<span class="room-furniture-icon" style="animation-delay:${Math.random()*2}s">${f.icon}</span>` : '';
+    }).join('');
 
-// ===== 仓库页 =====
-function renderStore() {
-  const owned = document.getElementById('ownedFurnitureGrid');
-  const locked = document.getElementById('lockedFurnitureGrid');
-
-  owned.innerHTML = '';
-  locked.innerHTML = '';
-
-  FURNITURE_DATA.forEach(f => {
-    const isOwned = gameState.ownedFurniture.includes(f.id);
-    const isUnlocked = gameState.unlockedFurniture.includes(f.id);
-    const count = gameState.ownedFurniture.filter(id => id === f.id).length;
-
-    const item = document.createElement('div');
-    item.className = 'furniture-item' + (!isOwned ? ' locked' : '');
-    item.innerHTML = `
-      <span class="furniture-icon">${f.icon}</span>
-      <span class="furniture-name">${f.name}</span>
-      ${count > 0 ? `<span class="furniture-count">×${count}</span>` : ''}
-      ${count > 0 && gameState.placedFurniture[f.room]?.includes(f.id) ? '<span class="furniture-check">✅</span>' : ''}
-    `;
-
-    if (isOwned && count > 0) {
-      item.onclick = () => showPlaceModal(f.id);
-    } else if (isOwned) {
-      item.onclick = () => {
-        showToast('去组装一件吧！');
-        goHome();
-        setTimeout(startAssemble, 500);
-      };
-    } else {
-      item.onclick = () => showToast('去商店解锁这件家具！');
-    }
-
-    if (isOwned) owned.appendChild(item);
-    else locked.appendChild(item);
-  });
-}
-
-// ===== 商店页 =====
-function renderShop() {
-  const list = document.getElementById('shopList');
-  list.innerHTML = '';
-
-  FURNITURE_DATA.forEach(f => {
-    const isOwned = gameState.ownedFurniture.includes(f.id);
-    const isUnlocked = gameState.unlockedFurniture.includes(f.id);
-
-    const item = document.createElement('div');
-    item.className = 'shop-item';
-
-    // 价格显示逻辑
-    let priceHTML = '';
-    if (isOwned) {
-      priceHTML = '<span class="price-tag owned">已拥有</span>';
-    } else if (isUnlocked) {
-      // 已解锁但未获得
-      priceHTML = `<button class="fail-btn fail-btn-primary" onclick="buyWithCoins('${f.id}', ${f.reward * 5})">🪙 ${f.reward * 5} 金币</button>`;
-    } else {
-      priceHTML = `<button class="ad-btn" onclick="unlockWithAd('${f.id}')">📺 看广告解锁</button>`;
-    }
-
-    item.innerHTML = `
-      <span class="shop-icon">${f.icon}</span>
-      <div class="shop-info">
-        <div class="shop-name">${f.name}</div>
-        <div class="shop-desc">${f.parts}个零件 · ${f.time}秒 · +${f.reward}金币</div>
-        <div class="shop-price">${priceHTML}</div>
+    card.innerHTML = `
+      <div class="room-preview" style="background:${room.bg}">
+        <div class="room-floor-grid"></div>
+        <div class="room-furniture-display">
+          ${ids.length > 0 ? furnitureIcons : '<div class="room-empty-state"><span class="room-empty-icon">🏚️</span><span class="room-empty-text">毛坯房</span></div>'}
+        </div>
+      </div>
+      <div class="room-card-footer">
+        <div class="room-name">${room.icon} ${room.name}</div>
+        <div class="room-meta">${placed}/${room.capacity} 件家具</div>
+        <div class="room-progress-bar"><div class="room-progress-fill" style="width:${pct}%"></div></div>
       </div>
     `;
-    list.appendChild(item);
+    container.appendChild(card);
   });
 }
 
-function buyWithCoins(fid, price) {
-  if (gameState.coins < price) {
-    showToast('金币不够！去看广告赚点吧~');
-    return;
+function renderTaskListHome() {
+  const container = document.getElementById('taskListHome');
+  container.innerHTML = '';
+  TASKS.filter(t => t.type === 'daily' || t.type === 'once').slice(0,3).forEach(task => {
+    const done = S.dailyTasks[task.id];
+    const item = document.createElement('div');
+    item.className = 'task-item slide-up';
+    item.innerHTML = `
+      <div class="task-icon-wrap">${task.icon}</div>
+      <div class="task-info">
+        <div class="task-name">${task.name}</div>
+        <div class="task-desc">${task.desc}</div>
+      </div>
+      <div class="task-reward">🪙 +${task.reward}</div>
+      ${done
+        ? '<button class="task-btn done" disabled>已完成 ✓</button>'
+        : `<button class="task-btn" onclick="claimTask('${task.id}')">去完成</button>`
+      }
+    `;
+    container.appendChild(item);
+  });
+}
+
+function renderRankCard() {
+  const card = document.getElementById('rankCard');
+  // 模拟排行榜
+  const rankers = [
+    { name:'小明', score: S.totalCoins, icon:'😎' },
+    { name:'装修达人', score: S.totalCoins, icon:'😊' },
+    { name:'张三', score: Math.max(0, S.totalCoins-100), icon:'🤗' },
+  ].sort((a,b)=>b.score-a.score);
+  rankers.push({ name:'你', score:S.totalCoins, icon:'😊'});
+  rankers.sort((a,b)=>b.score-a.score);
+
+  card.innerHTML = `
+    <div class="rank-list">
+      ${rankers.slice(0,4).map((r,i)=>`
+        <div class="rank-item">
+          <div class="rank-num ${i===0?'top1':i===1?'top2':i===2?'top3':''}">${i+1}</div>
+          <div class="rank-icon">${r.icon}</div>
+          <div class="rank-name">${r.name}</div>
+          <div class="rank-score">${r.score} 🪙</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ===== 房间详情 =====
+let currentRoomId = null;
+function showRoomDetail(roomId) {
+  currentRoomId = roomId;
+  const room = ROOMS.find(r=>r.id===roomId);
+  const placed = S.placedFurniture[roomId]||[];
+  const ids = placed;
+
+  document.getElementById('roomDetailName').textContent = `${room.icon} ${room.name}`;
+  document.getElementById('roomDetailMeta').textContent = `已摆放 ${ids.length} / ${room.capacity} 件家具`;
+
+  // 房间视觉
+  const visual = document.getElementById('roomVisualItems');
+  if (ids.length === 0) {
+    visual.innerHTML = `<div class="room-empty-state" style="position:absolute;inset:0"><span class="room-empty-icon">🏚️</span><span class="room-empty-text">空空如也，开始组装吧</span></div>`;
+  } else {
+    visual.innerHTML = ids.map(fid => {
+      const f = FURNITURE_DATA.find(x=>x.id===fid);
+      return f ? `<span class="room-viz-furniture">${f.icon}</span>` : '';
+    }).join('');
   }
-  gameState.coins -= price;
-  gameState.ownedFurniture.push(fid);
-  saveState();
-  renderShop();
-  updateCoinDisplay();
-  showToast(`获得 ${FURNITURE_DATA.find(f=>f.id===fid).name}！`);
-}
 
-function unlockWithAd(fid) {
-  // 广告模拟：这里接真实的广告SDK
-  simulateAd(() => {
-    gameState.unlockedFurniture.push(fid);
-    saveState();
-    renderShop();
-    showToast('解锁成功！去购买吧~');
-  });
+  // 已摆放列表
+  const list = document.getElementById('roomPlacedItems');
+  if (ids.length === 0) {
+    list.innerHTML = '';
+    document.getElementById('roomEmpty').style.display = '';
+  } else {
+    document.getElementById('roomEmpty').style.display = 'none';
+    list.innerHTML = ids.map(fid => {
+      const f = FURNITURE_DATA.find(x=>x.id===fid);
+      return f ? `<div class="room-placed-chip">${f.icon} ${f.name}</div>` : '';
+    }).join('');
+  }
+
+  showPage('roomDetailPage');
 }
 
 // ===== 组装游戏 =====
-let assembleState = {
+let A = {
   furniture: null,
   timeLeft: 0,
-  timerInterval: null,
-  placedParts: 0,
+  timer: null,
+  placedCount: 0,
   totalParts: 0,
-  targetPositions: [],  // 目标位置
-  partPositions: [],    // 零件当前位置
-  dragPart: null,
+  targetPos: [],
   hintUsed: false,
+  adReward: false,
 };
 
 function startAssemble() {
-  // 选择一个已解锁但未拥有的家具，或随机选一个
-  const available = gameState.unlockedFurniture.filter(id => {
-    const count = gameState.ownedFurniture.filter(fid => fid === id).length;
-    return count < 3; // 最多拥有3个同款
+  // 选择随机家具（优先选未满3件的）
+  const pool = S.unlockedFurniture.filter(id => {
+    return S.ownedFurniture.filter(f=>f===id).length < 3;
   });
-
-  if (available.length === 0) {
-    showToast('先去商店解锁新家具吧！');
+  if (pool.length === 0) {
+    toast('仓库满了！去放置家具吧~');
     return;
   }
+  const fid = pool[Math.floor(Math.random()*pool.length)];
+  const f = FURNITURE_DATA.find(x=>x.id===fid);
 
-  const fid = available[Math.floor(Math.random() * available.length)];
-  const furniture = FURNITURE_DATA.find(f => f.id === fid);
-
-  assembleState = {
-    furniture,
-    timeLeft: furniture.time,
-    timerInterval: null,
-    placedParts: 0,
-    totalParts: furniture.parts,
+  A = {
+    furniture: f,
+    timeLeft: f.time,
+    timer: null,
+    placedCount: 0,
+    totalParts: f.parts,
+    targetPos: [],
     hintUsed: false,
-    targetPositions: [],
-    partPositions: [],
-    dragPart: null,
+    adReward: false,
   };
 
-  document.getElementById('assembleFurnitureName').textContent = `🪑 组装 ${furniture.name}`;
+  document.getElementById('assembleFurnitureName').textContent = `${f.icon} ${f.name}`;
   document.getElementById('completeOverlay').classList.remove('show');
   document.getElementById('failOverlay').classList.remove('show');
-
   showPage('assemblePage');
-  renderBlueprint();
-  renderParts();
+  buildBlueprint(f);
+  buildParts(f);
   startTimer();
 }
 
-function renderBlueprint() {
+function buildBlueprint(f) {
   const canvas = document.getElementById('blueprintCanvas');
   canvas.innerHTML = '';
+  const cols = f.parts <= 4 ? 2 : f.parts <= 9 ? 3 : 4;
+  const rows = Math.ceil(f.parts / cols);
+  const cellSize = Math.min(52, (canvas.offsetWidth - 40 - (cols-1)*6) / cols);
 
-  const f = assembleState.furniture;
-  const canvasW = canvas.offsetWidth || 280;
-  const canvasH = 160;
+  const grid = document.createElement('div');
+  grid.className = 'target-grid';
+  grid.style.cssText = `grid-template-columns:repeat(${cols},${cellSize}px);gap:6px;`;
 
-  // 计算零件大小
-  const partSize = Math.min(40, (canvasW - 40) / f.parts);
-
-  // 生成目标位置
-  assembleState.targetPositions = [];
-  const positions = [];
-
+  A.targetPos = [];
   for (let i = 0; i < f.parts; i++) {
-    const col = i % 3;
-    const row = Math.floor(i / 3);
-    positions.push({
-      x: (canvasW - partSize * Math.min(3, f.parts)) / 2 + col * (partSize + 4),
-      y: (canvasH - partSize * Math.ceil(f.parts / 3)) / 2 + row * (partSize + 4),
-      w: partSize,
-      h: partSize,
-      placed: false,
-    });
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = col * (cellSize + 6);
+    const y = row * (cellSize + 6);
+    A.targetPos.push({ x, y, w: cellSize, h: cellSize, filled: false, index: i });
+
+    const cell = document.createElement('div');
+    cell.className = 'target-cell';
+    cell.dataset.index = i;
+    cell.style.cssText = `width:${cellSize}px;height:${cellSize}px;`;
+    cell.innerHTML = `<span class="cell-num">${i+1}</span>`;
+    grid.appendChild(cell);
   }
-  assembleState.targetPositions = positions;
-
-  // 绘制放置区（虚线框）
-  positions.forEach((pos, i) => {
-    const zone = document.createElement('div');
-    zone.className = 'drop-zone';
-    zone.dataset.index = i;
-    zone.style.cssText = `
-      left: ${pos.x}px;
-      top: ${pos.y}px;
-      width: ${pos.w}px;
-      height: ${pos.h}px;
-    `;
-    canvas.appendChild(zone);
-
-    // 在区域上显示序号
-    const num = document.createElement('div');
-    num.style.cssText = `
-      position: absolute;
-      width: ${pos.w}px;
-      height: ${pos.h}px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: rgba(255,255,255,0.2);
-      font-size: 18px;
-      font-weight: 700;
-    `;
-    num.textContent = i + 1;
-    zone.appendChild(num);
-  });
-
-  // 显示目标家具样式
-  const preview = document.createElement('div');
-  preview.style.cssText = `
-    position: absolute;
-    font-size: ${partSize * 1.5}px;
-    opacity: 0.15;
-    pointer-events: none;
-  `;
-  preview.textContent = f.icon;
-  canvas.appendChild(preview);
+  canvas.appendChild(grid);
 }
 
-function renderParts() {
+function buildParts(f) {
   const grid = document.getElementById('partsGrid');
   grid.innerHTML = '';
-
-  const f = assembleState.furniture;
-  const partSize = 56;
-
-  // 打乱顺序的零件
-  const indices = [];
-  for (let i = 0; i < f.parts; i++) indices.push(i);
-  // 简单shuffle
-  for (let i = indices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [indices[i], indices[j]] = [indices[j], indices[i]];
+  // 打乱
+  const indices = Array.from({length:f.parts},(_,i)=>i);
+  for (let i=indices.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [indices[i],indices[j]]=[indices[j],indices[i]];
   }
 
-  indices.forEach((targetIdx, displayIdx) => {
-    const pos = assembleState.targetPositions[targetIdx];
-    const part = document.createElement('div');
-    part.className = 'part-block';
-    part.dataset.target = targetIdx;
-    part.dataset.index = displayIdx;
-    part.style.cssText = `
-      width: ${pos.w}px;
-      height: ${pos.h}px;
-      background: ${f.color};
-      font-size: ${Math.max(10, pos.w / 3)}px;
-    `;
-    part.textContent = displayIdx + 1;
+  document.getElementById('assembleStep').textContent = `0 / ${f.parts} 零件`;
+  document.getElementById('partsProgress').textContent = `0 / ${f.parts}`;
 
-    // 拖拽事件
-    part.addEventListener('pointerdown', onPartPointerDown);
-
-    grid.appendChild(part);
+  indices.forEach(targetIdx => {
+    const pos = A.targetPos[targetIdx];
+    const cell = document.createElement('div');
+    cell.className = 'part-cell';
+    cell.dataset.target = targetIdx;
+    cell.style.background = f.color;
+    cell.innerHTML = `<span class="part-num">${targetIdx+1}</span><span class="part-icon">${f.icon}</span>`;
+    cell.addEventListener('pointerdown', onPartDown);
+    grid.appendChild(cell);
   });
-}
-
-function onPartPointerDown(e) {
-  if (assembleState.timerInterval === null) return; // 已结束
-
-  const part = e.currentTarget;
-  if (part.classList.contains('placed')) return;
-
-  e.preventDefault();
-  part.setPointerCapture(e.pointerId);
-
-  const rect = part.getBoundingClientRect();
-  const offsetX = e.clientX - rect.left;
-  const offsetY = e.clientY - rect.top;
-
-  // 创建拖拽副本
-  const clone = part.cloneNode(true);
-  clone.className = 'part-block part-dragging';
-  clone.style.width = rect.width + 'px';
-  clone.style.height = rect.height + 'px';
-  clone.style.left = rect.left + 'px';
-  clone.style.top = rect.top + 'px';
-  clone.style.background = assembleState.furniture.color;
-  document.body.appendChild(clone);
-
-  // 隐藏原零件
-  part.style.opacity = '0.3';
-
-  assembleState.dragPart = { part, clone, offsetX, offsetY, targetIdx: parseInt(part.dataset.target) };
-
-  part.addEventListener('pointermove', onPartPointerMove);
-  part.addEventListener('pointerup', onPartPointerUp);
-  part.addEventListener('pointercancel', onPartPointerUp);
-}
-
-function onPartPointerMove(e) {
-  if (!assembleState.dragPart) return;
-  const { clone, offsetX, offsetY } = assembleState.dragPart;
-  clone.style.left = (e.clientX - offsetX) + 'px';
-  clone.style.top = (e.clientY - offsetY) + 'px';
-
-  // 检测悬停的放置区
-  document.querySelectorAll('.drop-zone').forEach(zone => {
-    zone.classList.remove('drag-over');
-    const rect = zone.getBoundingClientRect();
-    if (e.clientX >= rect.left && e.clientX <= rect.right &&
-        e.clientY >= rect.top && e.clientY <= rect.bottom) {
-      zone.classList.add('drag-over');
-    }
-  });
-}
-
-function onPartPointerUp(e) {
-  if (!assembleState.dragPart) return;
-
-  const { part, clone, targetIdx } = assembleState.dragPart;
-
-  document.querySelectorAll('.drop-zone').forEach(zone => zone.classList.remove('drag-over'));
-
-  // 找到是否在正确的放置区
-  let placed = false;
-  document.querySelectorAll('.drop-zone').forEach(zone => {
-    const rect = zone.getBoundingClientRect();
-    if (e.clientX >= rect.left && e.clientX <= rect.right &&
-        e.clientY >= rect.top && e.clientY <= rect.bottom) {
-      const zoneIdx = parseInt(zone.dataset.index);
-      if (zoneIdx === targetIdx && !zone.classList.contains('filled')) {
-        // 正确放置！
-        placed = true;
-        zone.classList.add('filled');
-        zone.style.borderColor = 'transparent';
-        zone.style.background = assembleState.furniture.color + '33';
-        zone.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;font-size:${rect.width*0.5}px;">${assembleState.furniture.icon}</div>`;
-
-        part.classList.add('placed');
-        part.style.opacity = '0.2';
-        part.style.pointerEvents = 'none';
-
-        assembleState.placedParts++;
-        checkAssembleComplete();
-      }
-    }
-  });
-
-  if (!placed) {
-    // 回到原位
-    part.style.opacity = '';
-  }
-
-  clone.remove();
-  assembleState.dragPart = null;
-
-  part.removeEventListener('pointermove', onPartPointerMove);
-  part.removeEventListener('pointerup', onPartPointerUp);
-  part.removeEventListener('pointercancel', onPartPointerUp);
 }
 
 function startTimer() {
   updateTimerDisplay();
-  assembleState.timerInterval = setInterval(() => {
-    assembleState.timeLeft--;
+  A.timer = setInterval(() => {
+    A.timeLeft--;
     updateTimerDisplay();
-    if (assembleState.timeLeft <= 0) {
-      clearInterval(assembleState.timerInterval);
-      assembleState.timerInterval = null;
-      onAssembleFail();
-    }
+    if (A.timeLeft <= 0) { clearInterval(A.timer); A.timer=null; onAssembleFail(); }
   }, 1000);
 }
 
 function updateTimerDisplay() {
   const el = document.getElementById('timerDisplay');
-  const m = Math.floor(assembleState.timeLeft / 60);
-  const s = assembleState.timeLeft % 60;
-  el.textContent = `⏱ ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  el.className = 'timer-display' + (assembleState.timeLeft <= 10 ? ' timer-warning' : '');
+  const m = String(Math.floor(A.timeLeft/60)).padStart(2,'0');
+  const s = String(A.timeLeft%60).padStart(2,'0');
+  el.textContent = `⏱ ${m}:${s}`;
+  el.className = 'assemble-timer' + (A.timeLeft<=10 ? ' timer-danger' : '');
 }
 
-function checkAssembleComplete() {
-  if (assembleState.placedParts >= assembleState.totalParts) {
-    clearInterval(assembleState.timerInterval);
-    assembleState.timerInterval = null;
-    onAssembleComplete();
+// 拖拽
+let dragState = null;
+
+function onPartDown(e) {
+  if (A.timer === null) return;
+  const part = e.currentTarget;
+  if (part.classList.contains('placed')) return;
+  e.preventDefault();
+  part.setPointerCapture(e.pointerId);
+
+  const rect = part.getBoundingClientRect();
+  dragState = {
+    part, clone: null, offsetX: e.clientX-rect.left, offsetY: e.clientY-rect.top,
+    targetIdx: parseInt(part.dataset.target)
+  };
+
+  // 创建拖拽预览
+  const clone = part.cloneNode(true);
+  clone.className = 'part-cell part-drag-preview';
+  clone.style.width = rect.width+'px'; clone.style.height = rect.height+'px';
+  clone.style.left = rect.left+'px'; clone.style.top = rect.top+'px';
+  document.body.appendChild(clone);
+  dragState.clone = clone;
+  part.style.opacity = '0.3';
+
+  part.addEventListener('pointermove', onPartMove);
+  part.addEventListener('pointerup', onPartUp);
+  part.addEventListener('pointercancel', onPartUp);
+}
+
+function onPartMove(e) {
+  if (!dragState) return;
+  const { clone, offsetX, offsetY } = dragState;
+  clone.style.left = (e.clientX - offsetX)+'px';
+  clone.style.top = (e.clientY - offsetY)+'px';
+
+  // 高亮目标格子
+  document.querySelectorAll('.target-cell').forEach(c => c.classList.remove('highlight'));
+  document.querySelectorAll('.part-cell').forEach(p => p.classList.remove('hint'));
+  A.targetPos.forEach((pos, i) => {
+    if (pos.filled) return;
+    const canvasRect = document.getElementById('blueprintCanvas').getBoundingClientRect();
+    const px = pos.x + (canvasRect.left ? 0 : 14);
+    const py = pos.y + (canvasRect.top ? 0 : 14);
+    if (Math.abs(e.clientX - (canvasRect.left + px + pos.w/2)) < pos.w/2 + 20 &&
+        Math.abs(e.clientY - (canvasRect.top + py + pos.h/2)) < pos.h/2 + 20) {
+      document.querySelector(`.target-cell[data-index="${i}"]`)?.classList.add('highlight');
+    }
+  });
+}
+
+function onPartUp(e) {
+  if (!dragState) return;
+  const { part, clone, offsetX, offsetY, targetIdx } = dragState;
+
+  document.querySelectorAll('.target-cell').forEach(c=>c.classList.remove('highlight'));
+  document.querySelectorAll('.part-cell').forEach(p=>p.classList.remove('hint'));
+
+  let placed = false;
+  const canvasRect = document.getElementById('blueprintCanvas').getBoundingClientRect();
+
+  A.targetPos.forEach((pos, i) => {
+    if (pos.filled || i !== targetIdx) return;
+    const cx = canvasRect.left + 14 + pos.x + pos.w/2;
+    const cy = canvasRect.top + 14 + pos.y + pos.h/2;
+    if (Math.abs(e.clientX - cx) < pos.w/2 + 25 && Math.abs(e.clientY - cy) < pos.h/2 + 25) {
+      // 成功！
+      pos.filled = true;
+      A.placedCount++;
+      part.classList.add('placed');
+
+      const cell = document.querySelector(`.target-cell[data-index="${i}"]`);
+      if (cell) {
+        cell.classList.add('filled');
+        cell.style.background = A.furniture.color;
+        cell.style.borderColor = 'transparent';
+        cell.innerHTML = `<span style="font-size:${pos.w*0.5}px;z-index:2;position:relative;">${A.furniture.icon}</span>`;
+        // 成功动画
+        const ring = document.createElement('div');
+        ring.className = 'part-success-ring';
+        cell.appendChild(ring);
+        setTimeout(() => ring.remove(), 500);
+        // 粒子
+        particle(e.clientX, e.clientY, '✨');
+      }
+
+      document.getElementById('assembleStep').textContent = `${A.placedCount} / ${A.totalParts} 零件`;
+      document.getElementById('partsProgress').textContent = `${A.placedCount} / ${A.totalParts}`;
+      placed = true;
+
+      if (A.placedCount >= A.totalParts) {
+        clearInterval(A.timer); A.timer = null;
+        setTimeout(() => onAssembleComplete(), 300);
+      }
+    }
+  });
+
+  if (!placed) part.style.opacity = '';
+  clone.remove();
+  dragState = null;
+
+  part.removeEventListener('pointermove', onPartMove);
+  part.removeEventListener('pointerup', onPartUp);
+  part.removeEventListener('pointercancel', onPartUp);
+}
+
+function useHint() {
+  if (A.hintUsed) { toast('已经用过了~'); return; }
+  A.hintUsed = true;
+  // 找到第一个未放置的零件和高亮对应格子
+  const firstUnplaced = A.targetPos.findIndex(p => !p.filled);
+  if (firstUnplaced < 0) return;
+  const part = document.querySelector(`.part-cell[data-target="${firstUnplaced}"]`);
+  if (part) {
+    part.classList.add('hint');
+    setTimeout(() => part.classList.remove('hint'), 3000);
   }
+  const cell = document.querySelector(`.target-cell[data-index="${firstUnplaced}"]`);
+  if (cell) {
+    cell.classList.add('highlight');
+    setTimeout(() => cell.classList.remove('highlight'), 3000);
+  }
+  toast('💡 零件位置已高亮！', 'gold');
 }
 
 function onAssembleComplete() {
-  const f = assembleState.furniture;
-  gameState.stats.assembled++;
+  const f = A.furniture;
+  S.stats.assembled++;
 
-  // 给家具（最多3个同款）
-  const owned = gameState.ownedFurniture.filter(id => id === f.id).length;
-  if (owned < 3) {
-    gameState.ownedFurniture.push(f.id);
-  }
+  // 给家具
+  const owned = S.ownedFurniture.filter(id=>id===f.id).length;
+  if (owned < 3) S.ownedFurniture.push(f.id);
 
-  // 给金币
-  const reward = f.reward;
-  gameState.coins += reward;
-  gameState.totalCoins += reward;
+  // 金币
+  S.coins += f.reward;
+  S.totalCoins += f.reward;
 
-  saveState();
+  // 任务进度
+  if (S.taskProgress['assemble1'] !== undefined) S.taskProgress['assemble1']++;
+  if (S.taskProgress['assemble3'] !== undefined) S.taskProgress['assemble3']++;
+  if (S.taskProgress['assemble5'] !== undefined) S.taskProgress['assemble5']++;
+
+  save();
   updateCoinDisplay();
 
-  document.getElementById('completeReward').textContent = `获得 +${reward} 金币`;
+  document.getElementById('completeReward').textContent = `🪙 +${f.reward}`;
+  document.getElementById('completeSub').textContent = `${f.icon} ${f.name} 已入库！`;
   document.getElementById('completeOverlay').classList.add('show');
 }
 
@@ -1594,248 +1997,376 @@ function onAssembleFail() {
   document.getElementById('failOverlay').classList.add('show');
 }
 
-let pendingFurnitureId = null;
-
-function finishAssemble() {
-  // 完成后弹出放置界面
-  const f = assembleState.furniture;
-  document.getElementById('completeOverlay').classList.remove('show');
-  showPlaceModal(f.id);
-  exitAssemble();
-}
-
 function exitAssemble() {
-  if (assembleState.timerInterval !== null) {
-    clearInterval(assembleState.timerInterval);
-    assembleState.timerInterval = null;
-  }
+  if (A.timer) { clearInterval(A.timer); A.timer = null; }
   document.getElementById('completeOverlay').classList.remove('show');
   document.getElementById('failOverlay').classList.remove('show');
   goHome();
 }
 
+function collectFurniture() {
+  document.getElementById('completeOverlay').classList.remove('show');
+  showPlacePanel(A.furniture.id);
+}
+
 // ===== 放置家具 =====
-let selectedRoom = null;
-let pendingPlaceId = null;
+function showPlacePanel(fid) {
+  const f = FURNITURE_DATA.find(x=>x.id===fid);
+  toast(`获得 ${f.icon} ${f.name}！`, 'success');
 
-function showPlaceModal(fid) {
-  pendingPlaceId = fid;
-  const f = FURNITURE_DATA.find(f => f.id === fid);
-  document.getElementById('placeFurnitureName').textContent = `放置 ${f.icon} ${f.name}`;
-
-  const grid = document.getElementById('roomSelectGrid');
-  grid.innerHTML = '';
-
-  ROOMS.forEach(room => {
-    const count = (gameState.placedFurniture[room.id] || []).length;
-    const isFull = count >= room.capacity;
-
-    const item = document.createElement('div');
-    item.className = 'room-select-item';
-    item.dataset.room = room.id;
-    item.innerHTML = `
-      <div class="room-select-icon">${room.icon}</div>
-      <div class="room-select-name">${room.name} ${count}/${room.capacity}</div>
-    `;
-    if (isFull) {
-      item.style.opacity = '0.4';
-      item.style.cursor = 'not-allowed';
-    } else {
-      item.onclick = () => selectRoom(room.id);
-    }
-    grid.appendChild(item);
-  });
-
-  document.getElementById('placeModal').classList.add('show');
+  // 自动放入对应房间
+  const roomId = f.room;
+  if (!S.placedFurniture[roomId]) S.placedFurniture[roomId] = [];
+  const room = ROOMS.find(r=>r.id===roomId);
+  if (S.placedFurniture[roomId].length < room.capacity) {
+    S.placedFurniture[roomId].push(fid);
+    S.stats.placed++;
+    if (S.taskProgress['place3'] !== undefined) S.taskProgress['place3']++;
+    save();
+    toast(`${room.icon} ${room.name} +1`);
+  }
+  exitAssemble();
 }
 
-function selectRoom(roomId) {
-  selectedRoom = roomId;
-  document.querySelectorAll('.room-select-item').forEach(el => {
-    el.classList.toggle('selected', el.dataset.room === roomId);
-  });
-}
-
-function confirmPlace() {
-  if (!selectedRoom) {
-    showToast('请先选择一个房间~');
-    return;
-  }
-  const fid = pendingPlaceId;
-  if (!gameState.placedFurniture[selectedRoom]) {
-    gameState.placedFurniture[selectedRoom] = [];
-  }
-  const room = ROOMS.find(r => r.id === selectedRoom);
-  if (gameState.placedFurniture[selectedRoom].length >= room.capacity) {
-    showToast('这个房间放满了！');
-    return;
-  }
-  gameState.placedFurniture[selectedRoom].push(fid);
-  gameState.stats.placed++;
-  saveState();
-
-  document.getElementById('placeModal').classList.remove('show');
-  selectedRoom = null;
-  pendingPlaceId = null;
-
-  showToast('家具已放置！');
-  goHome();
-}
-
-// ===== 广告模拟 =====
-function simulateAd(callback) {
-  // 实际项目中接入微信广告SDK
-  // 这里模拟：3秒后回调
-  const overlay = document.createElement('div');
-  overlay.style.cssText = `
-    position: fixed; inset: 0; background: rgba(0,0,0,0.9);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    z-index: 500; color: #fff;
-  `;
-  overlay.innerHTML = `
-    <div style="font-size:48px;margin-bottom:12px;">📺</div>
-    <div style="font-size:16px;margin-bottom:20px;">广告播放中...</div>
-    <div style="width:200px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;overflow:hidden;">
-      <div id="adProgress" style="height:100%;background:#E07B39;width:0%;transition:width 0.1s linear;"></div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-
-  let progress = 0;
-  const interval = setInterval(() => {
-    progress += 2;
-    document.getElementById('adProgress').style.width = progress + '%';
-    if (progress >= 100) {
-      clearInterval(interval);
-      overlay.remove();
-      gameState.adsWatched++;
-      showToast('获得 +10 金币奖励！');
-      gameState.coins += 10;
-      gameState.totalCoins += 10;
-      saveState();
+// ===== 广告 =====
+let adCallback = null;
+function showAd(callback) {
+  adCallback = callback;
+  const modal = document.getElementById('adModal');
+  const progress = document.getElementById('adProgress');
+  const skip = document.getElementById('adSkip');
+  modal.classList.add('show');
+  progress.style.width = '0%';
+  let pct = 0;
+  const iv = setInterval(() => {
+    pct += 2;
+    progress.style.width = pct+'%';
+    skip.textContent = `剩余 ${Math.ceil((100-pct)/2)} 秒`;
+    if (pct >= 100) {
+      clearInterval(iv);
+      modal.classList.remove('show');
+      S.stats.adsWatched++;
+      S.coins += 10;
+      S.totalCoins += 10;
+      save();
       updateCoinDisplay();
-      if (callback) callback();
+      toast('观看完成！+10金币', 'gold');
+      if (adCallback) adCallback();
     }
   }, 60);
 }
 
-function showAd() {
-  simulateAd(() => {
-    // 广告看完后的回调
-    showToast('感谢观看广告！');
+function showAdForDouble() {
+  showAd(() => {
+    const bonus = A.furniture.reward;
+    S.coins += bonus;
+    S.totalCoins += bonus;
+    save();
+    updateCoinDisplay();
+    toast(`双倍奖励！+${bonus}金币`, 'gold');
+    collectFurniture();
   });
 }
 
-function showAdDouble() {
-  simulateAd(() => {
-    const f = assembleState.furniture;
-    const bonus = f.reward;
-    gameState.coins += bonus;
-    gameState.totalCoins += bonus;
-    saveState();
-    updateCoinDisplay();
-    showToast(`获得双倍 +${bonus} 金币！`);
-    finishAssemble();
+function showAdForRetry() {
+  showAd(() => {
+    document.getElementById('failOverlay').classList.remove('show');
+    A.timeLeft = 10;
+    startTimer();
+  });
+}
+
+function updateCoinDisplay() {
+  document.getElementById('topbarCoins').textContent = S.coins;
+  document.getElementById('topbarGems').textContent = S.gems;
+}
+
+// ===== 签到 =====
+function showSigninPanel() {
+  const today = new Date().toDateString();
+  const signed = S.lastSignin === today;
+
+  const days = document.getElementById('signinDays');
+  days.innerHTML = '';
+  for (let i = 0; i < 7; i++) {
+    const reward = SIGNIN_REWARDS[i];
+    const isDone = i < S.signinStreak % 7 || (S.signinStreak >= 7 && i < 7);
+    const isToday = i === S.signinStreak % 7;
+
+    const div = document.createElement('div');
+    div.className = 'signin-day' + (isDone && S.lastSignin!==today ? '' : isToday ? ' today' : isDone ? ' done' : '');
+    div.innerHTML = `
+      <span class="signin-day-icon">${isDone ? '✓' : '📅'}</span>
+      <span class="signin-reward-icon">🪙${reward}</span>
+      <span class="signin-day-num">第${i+1}天</span>
+    `;
+    days.appendChild(div);
+  }
+
+  document.getElementById('signinSub').textContent = `连续签到 ${S.signinStreak} 天`;
+  const btn = document.getElementById('signinBtn');
+  if (signed) {
+    btn.textContent = '今日已签到 ✓';
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+  } else {
+    btn.textContent = `立即签到 (+${SIGNIN_REWARDS[S.signinStreak%7]}金币)`;
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+
+  openPanel('signinPanel');
+}
+
+function doSignin() {
+  const today = new Date().toDateString();
+  if (S.lastSignin === today) return;
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+  if (S.lastSignin === yesterday.toDateString()) S.signinStreak++;
+  else S.signinStreak = 1;
+  S.lastSignin = today;
+  S.totalSignins++;
+
+  const reward = SIGNIN_REWARDS[(S.signinStreak-1)%7];
+  S.coins += reward;
+  S.totalCoins += reward;
+
+  S.taskProgress['signin'] = 1;
+  S.dailyTasks['signin'] = true;
+
+  save();
+  updateCoinDisplay();
+
+  document.getElementById('rewardIcon').textContent = '🎁';
+  document.getElementById('rewardTitle').textContent = '签到成功！';
+  document.getElementById('rewardSub').textContent = `连续签到 ${S.signinStreak} 天`;
+  document.getElementById('rewardItem').innerHTML = `🪙 +${reward}`;
+  document.getElementById('signinPanel').classList.remove('open');
+  document.getElementById('panelOverlay').classList.remove('open');
+  document.getElementById('rewardModal').classList.add('show');
+  renderHome();
+}
+
+function closeReward() {
+  document.getElementById('rewardModal').classList.remove('show');
+}
+
+// ===== 任务 =====
+function claimTask(taskId) {
+  const task = TASKS.find(t=>t.id===taskId);
+  if (!task) return;
+  const prog = S.taskProgress[taskId]||0;
+  if (task.target && prog < task.target) {
+    toast(`${task.name} (${prog}/${task.target})`);
+    return;
+  }
+  if (task.id === 'place3') {
+    if (countPlaced(S) < 3) { toast('摆放3件家具后领取'); return; }
+  }
+  if (task.id === 'assemble1') {
+    if (S.stats.assembled < 1) { toast('先完成一次组装吧~'); return; }
+  }
+
+  S.dailyTasks[task.id] = true;
+  S.coins += task.reward;
+  S.totalCoins += task.reward;
+  if (task.target) S.taskProgress[taskId] = 0;
+  save();
+  updateCoinDisplay();
+  toast(`任务完成！+${task.reward}金币`, 'success');
+  renderHome();
+  renderTasksPanel();
+}
+
+function renderTasksPanel() {
+  const container = document.getElementById('taskList');
+  container.innerHTML = '';
+  TASKS.forEach(task => {
+    const done = S.dailyTasks[task.id];
+    const prog = S.taskProgress[task.id]||0;
+    const show = task.target ? ` (${Math.min(prog,task.target)}/${task.target})` : '';
+    const item = document.createElement('div');
+    item.className = 'task-item';
+    item.innerHTML = `
+      <div class="task-icon-wrap">${task.icon}</div>
+      <div class="task-info">
+        <div class="task-name">${task.name}${show}</div>
+        <div class="task-desc">${task.desc}</div>
+      </div>
+      <div class="task-reward">🪙 +${task.reward}</div>
+      ${done
+        ? '<button class="task-btn done" disabled>已完成 ✓</button>'
+        : `<button class="task-btn" onclick="claimTask('${task.id}')">去完成</button>`
+      }
+    `;
+    container.appendChild(item);
+  });
+}
+
+function showTasksPanel() {
+  renderTasksPanel();
+  openPanel('tasksPanel');
+}
+
+// ===== 仓库 =====
+let storeTab = 'owned';
+function showStorePanel() {
+  switchStoreTab('owned');
+  openPanel('storePanel');
+}
+
+function switchStoreTab(tab) {
+  storeTab = tab;
+  document.querySelectorAll('.store-tab').forEach(t => t.classList.remove('active'));
+  event?.target?.classList.add('active');
+  document.querySelectorAll('.store-tab')[tab==='owned'?0:1].classList.add('active');
+
+  const grid = document.getElementById('furnitureShowcase');
+  grid.innerHTML = '';
+
+  const items = tab === 'owned'
+    ? FURNITURE_DATA.filter(f => S.ownedFurniture.includes(f.id))
+    : FURNITURE_DATA;
+
+  if (items.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-light);font-size:14px;">还没有家具，快去组装吧~</div>';
+    return;
+  }
+
+  items.forEach(f => {
+    const owned = S.ownedFurniture.includes(f.id);
+    const count = S.ownedFurniture.filter(id=>id===f.id).length;
+    const placed = S.placedFurniture[f.room]?.includes(f.id);
+    const locked = !S.unlockedFurniture.includes(f.id);
+
+    const card = document.createElement('div');
+    card.className = 'furniture-card' + (owned ? ' owned' : locked ? ' locked' : '') + (placed ? ' placed' : '');
+    card.innerHTML = `
+      <div class="furniture-card-icon">${f.icon}</div>
+      <div class="furniture-card-name">${f.name}</div>
+      <div class="furniture-card-count">${owned ? `<span>×${count}</span>` : locked ? '🔒' : '🆓'}</div>
+    `;
+    if (!locked) card.onclick = () => {
+      if (owned) {
+        toast(`${f.icon} ${f.name} 已拥有！`);
+      } else {
+        toast(`${f.icon} ${f.name} — 去组装吧！`);
+      }
+    };
+    grid.appendChild(card);
   });
 }
 
 // ===== 我的页面 =====
-function renderMy() {
-  document.getElementById('myFurniture').textContent = gameState.ownedFurniture.length;
-  document.getElementById('myPlaced').textContent = countPlaced(gameState);
-  document.getElementById('myCoins').textContent = gameState.coins;
+function showMy() {
+  showPage('myPage');
+  renderMy();
+}
 
-  const list = document.getElementById('achievementList');
-  list.innerHTML = '';
-  ACHIEVEMENTS.forEach(a => {
-    const unlocked = a.condition(gameState);
-    const item = document.createElement('div');
-    item.className = 'achievement-item';
-    item.innerHTML = `
-      <span class="achievement-icon">${a.icon}</span>
-      <div class="achievement-info">
-        <div class="achievement-name">${a.name}</div>
-        <div class="achievement-desc">${a.desc}</div>
+function renderMy() {
+  document.getElementById('myTotalFurniture').textContent = countOwned(S);
+  document.getElementById('myTotalPlaced').textContent = countPlaced(S);
+  document.getElementById('myTotalCoins').textContent = S.totalCoins;
+  document.getElementById('myPlayerId').textContent = String(S.totalCoins).slice(0,6);
+
+  // 成就
+  const grid = document.getElementById('achievementGrid');
+  grid.innerHTML = '';
+  ACHIEVEMENTS.slice(0,6).forEach(a => {
+    const done = a.cond(S);
+    const div = document.createElement('div');
+    div.className = 'achievement-card' + (done ? ' done' : '');
+    div.innerHTML = `
+      <div class="achievement-card-icon">${a.icon}</div>
+      <div>
+        <div class="achievement-card-name">${a.name}</div>
+        <div class="achievement-card-desc">${a.desc}</div>
+        <div class="achievement-card-status">${done ? '🏆 已达成' : '🔒 未达成'}</div>
       </div>
-      <span class="achievement-status">${unlocked ? '🏆 已达成' : '🔒 未达成'}</span>
     `;
-    item.style.opacity = unlocked ? '1' : '0.6';
-    list.appendChild(item);
+    grid.appendChild(div);
   });
+
+  // 排行榜
+  const list = document.getElementById('myRankList');
+  const rankers = [
+    {name:'🎨 小明', score:Math.max(S.totalCoins+50,100)},
+    {name:'🔨 张三', score:Math.max(S.totalCoins+20,80)},
+    {name:'🏠 李四', score:Math.max(S.totalCoins-50,50)},
+    {name:'😊 你', score:S.totalCoins},
+  ].sort((a,b)=>b.score-a.score);
+  list.innerHTML = rankers.map((r,i)=>`
+    <div class="rank-item">
+      <div class="rank-num ${i===0?'top1':i===1?'top2':i===2?'top3':''}">${i+1}</div>
+      <div class="rank-icon">${r.name.includes('你')?'😊':'🤖'}</div>
+      <div class="rank-name">${r.name}</div>
+      <div class="rank-score">${r.score} 🪙</div>
+    </div>
+  `).join('');
+}
+
+// ===== 分享 =====
+function shareGame() {
+  if (navigator.share) {
+    navigator.share({ title:'装个家', text:'我用碎片时间装修了我的家，你也来试试！', url: location.href });
+  } else {
+    navigator.clipboard?.writeText(location.href);
+    toast('链接已复制，快去分享吧！', 'success');
+  }
+}
+
+// ===== 面板 =====
+function openPanel(panelId) {
+  document.getElementById('panelOverlay').classList.add('open');
+  document.getElementById(panelId).classList.add('open');
+}
+function closeAllPanels() {
+  document.getElementById('panelOverlay').classList.remove('open');
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
 }
 
 // ===== 新手引导 =====
-const GUIDE_STEPS = [
-  { icon: '🏠', title: '欢迎来到「装个家」', desc: '用碎片时间，组装家具\n把毛坯房变成温馨的家', btn: '知道了' },
-  { icon: '🪑', title: '组装家具很简单', desc: '拖拽零件到正确位置\n照着图纸拼出完整家具', btn: '我会了' },
-  { icon: '💰', title: '看广告能加速', desc: '想要双倍金币？想要复活？\n看个广告就能解决', btn: '开始装修！' },
-];
-
 function showGuide() {
-  if (gameState.guideStep >= GUIDE_STEPS.length) return;
-  const step = GUIDE_STEPS[gameState.guideStep];
-  document.getElementById('guideIcon').textContent = step.icon;
+  if (S.guideStep >= GUIDE_STEPS.length) return;
+  const step = GUIDE_STEPS[S.guideStep];
+  document.getElementById('guideHand').textContent = step.hand;
   document.getElementById('guideTitle').textContent = step.title;
   document.getElementById('guideDesc').textContent = step.desc;
+  document.getElementById('guideStep').textContent = `第 ${S.guideStep+1}/${GUIDE_STEPS.length} 步`;
   document.getElementById('guideBtn').textContent = step.btn;
-  document.getElementById('guideStep').textContent = `第 ${gameState.guideStep + 1}/${GUIDE_STEPS.length} 步`;
   document.getElementById('guideOverlay').classList.add('show');
 }
 
 function nextGuide() {
-  gameState.guideStep++;
-  saveState();
-  if (gameState.guideStep >= GUIDE_STEPS.length) {
+  S.guideStep++;
+  save();
+  if (S.guideStep >= GUIDE_STEPS.length) {
     document.getElementById('guideOverlay').classList.remove('show');
   } else {
     showGuide();
   }
 }
 
-// ===== 启动 =====
-document.getElementById('btnStart').addEventListener('click', () => {
-  // 检查是否有可组装的家具
-  const available = gameState.unlockedFurniture.filter(id => {
-    const count = gameState.ownedFurniture.filter(fid => fid === id).length;
-    return count < 3;
-  });
-  if (available.length === 0) {
-    showToast('仓库满了！去放置家具吧~');
-    return;
-  }
-  startAssemble();
-});
-
-loadState();
+// ===== 初始化 =====
+load();
 updateCoinDisplay();
 renderHome();
 
-// 首次进入显示引导
-setTimeout(() => {
-  if (gameState.guideStep < GUIDE_STEPS.length) {
-    showGuide();
-  }
-}, 300);
-
-// 放置弹窗点击外部关闭
-document.getElementById('placeModal').addEventListener('click', (e) => {
-  if (e.target === document.getElementById('placeModal')) {
-    document.getElementById('placeModal').classList.remove('show');
-  }
-});
-
-// ===== 更新成就检查 =====
-function checkAchievements() {
-  // 每次状态变化检查成就
-  renderMy();
+// 登录任务
+if (!S.dailyTasks['login']) {
+  S.dailyTasks['login'] = true;
+  S.coins += 10;
+  S.totalCoins += 10;
+  S.taskProgress['login'] = 1;
+  save();
+  updateCoinDisplay();
 }
 
-// 每次保存后检查
-const _saveState = saveState;
-saveState = function() {
-  _saveState();
-  checkAchievements();
-};
+// 首次引导
+setTimeout(() => {
+  if (S.guideStep < GUIDE_STEPS.length) showGuide();
+}, 500);
+
 </script>
 </body>
 </html>
